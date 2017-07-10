@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import yolo.config as cfg
+import IPython
 
 slim = tf.contrib.slim
 
@@ -44,9 +45,10 @@ class YOLONet(object):
                       images,
                       num_outputs,
                       alpha,
-                      keep_prob=0.5,
+                      keep_prob=1.0,
                       is_training=True,
                       scope='yolo'):
+       
         with tf.variable_scope(scope):
             with slim.arg_scope([slim.conv2d, slim.fully_connected],
                                 activation_fn=leaky_relu(alpha),

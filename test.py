@@ -6,7 +6,7 @@ import argparse
 import yolo.config as cfg
 from yolo.yolo_net import YOLONet
 from utils.timer import Timer
-
+import IPython
 
 class Detector(object):
 
@@ -37,6 +37,7 @@ class Detector(object):
             y = int(result[i][2])
             w = int(result[i][3] / 2)
             h = int(result[i][4] / 2)
+            IPython.embed()
             cv2.rectangle(img, (x - w, y - h), (x + w, y + h), (0, 255, 0), 2)
             cv2.rectangle(img, (x - w, y - h - 20),
                           (x + w, y - h), (125, 125, 125), -1)
@@ -45,12 +46,13 @@ class Detector(object):
     def detect(self, img):
         img_h, img_w, _ = img.shape
         inputs = cv2.resize(img, (self.image_size, self.image_size))
-        inputs = cv2.cvtColor(inputs, cv2.COLOR_BGR2RGB).astype(np.float32)
+        #inputs = cv2.cvtColor(inputs, cv2.COLOR_BGR2RGB).astype(np.float32)
+        
         inputs = (inputs / 255.0) * 2.0 - 1.0
         inputs = np.reshape(inputs, (1, self.image_size, self.image_size, 3))
 
         result = self.detect_from_cvmat(inputs)[0]
-
+        print result
         for i in range(len(result)):
             result[i][1] *= (1.0 * img_w / self.image_size)
             result[i][2] *= (1.0 * img_h / self.image_size)
@@ -60,8 +62,10 @@ class Detector(object):
         return result
 
     def detect_from_cvmat(self, inputs):
+        print inputs
         net_output = self.sess.run(self.net.logits,
                                    feed_dict={self.net.images: inputs})
+        #IPython.embed()
         results = []
         for i in range(net_output.shape[0]):
             results.append(self.interpret_output(net_output[i]))
@@ -88,7 +92,7 @@ class Detector(object):
             for j in range(self.num_class):
                 probs[:, :, i, j] = np.multiply(
                     class_probs[:, :, j], scales[:, :, i])
-
+        
         filter_mat_probs = np.array(probs >= self.threshold, dtype='bool')
         filter_mat_boxes = np.nonzero(filter_mat_probs)
         boxes_filtered = boxes[filter_mat_boxes[0],
@@ -174,7 +178,9 @@ def main():
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
     yolo = YOLONet(False)
-    weight_file = os.path.join(args.data_dir, args.weight_dir, args.weights)
+    weight_file = '/home/autolab/Workspaces/michael_working/yolo_tensorflow/data/pascal_voc/weights/save.ckpt-100'#os.path.join(args.data_dir, args.weight_dir, args.weights)
+    #weight_file = os.path.join(args.data_dir, args.weight_dir, args.weights)
+
     detector = Detector(yolo, weight_file)
 
     # detect from camera
@@ -182,7 +188,8 @@ def main():
     # detector.camera_detector(cap)
 
     # detect from image file
-    imname = 'test/person.jpg'
+    imname = cfg.IMAGE_PATH + 'frame_1771.png'
+    #imname = 'test/person.jpg' 
     detector.image_detector(imname)
 
 

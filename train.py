@@ -5,8 +5,12 @@ import argparse
 import yolo.config as cfg
 from yolo.yolo_net import YOLONet
 from utils.timer import Timer
+from utils.bbox_data import bbox_data
 from utils.pascal_voc import pascal_voc
-
+import IPython
+slim = tf.contrib.slim
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 class Solver(object):
 
@@ -27,8 +31,13 @@ class Solver(object):
             os.makedirs(self.output_dir)
         self.save_cfg()
 
-        self.variable_to_restore = tf.global_variables()
-        self.saver = tf.train.Saver(self.variable_to_restore, max_to_keep=None)
+        self.variable_to_restore = slim.get_variables_to_restore()
+        self.variables_to_restore = self.variable_to_restore[0:-2]
+        #tf.global_variables_initializer()
+        self.saver = tf.train.Saver(self.variables_to_restore, max_to_keep=None)
+
+        self.all_saver = tf.train.Saver()
+        #self.saver = tf.train.Saver()
         self.ckpt_file = os.path.join(self.output_dir, 'save.ckpt')
         self.summary_op = tf.summary.merge_all()
         self.writer = tf.summary.FileWriter(self.output_dir, flush_secs=60)
@@ -50,12 +59,18 @@ class Solver(object):
         config = tf.ConfigProto(gpu_options=gpu_options)
         self.sess = tf.Session(config=config)
         self.sess.run(tf.global_variables_initializer())
+        #IPython.embed()
 
         if self.weights_file is not None:
             print('Restoring weights from: ' + self.weights_file)
+         
             self.saver.restore(self.sess, self.weights_file)
 
         self.writer.add_graph(self.sess.graph)
+
+    def variables_to_restore(self):
+
+        return
 
     def train(self):
 
@@ -109,7 +124,7 @@ class Solver(object):
                 print('{} Saving checkpoint file to: {}'.format(
                     datetime.datetime.now().strftime('%m/%d %H:%M:%S'),
                     self.output_dir))
-                self.saver.save(self.sess, self.ckpt_file,
+                self.all_saver.save(self.sess, self.ckpt_file,
                                 global_step=self.global_step)
 
     def save_cfg(self):
@@ -130,6 +145,7 @@ def update_config_paths(data_dir, weights_file):
     cfg.WEIGHTS_DIR = os.path.join(cfg.PASCAL_PATH, 'weights')
 
     cfg.WEIGHTS_FILE = os.path.join(cfg.WEIGHTS_DIR, weights_file)
+    #IPython.embed()
 
 
 def main():
@@ -147,10 +163,10 @@ def main():
     if args.data_dir != cfg.DATA_PATH:
         update_config_paths(args.data_dir, args.weights)
 
-    os.environ['CUDA_VISIBLE_DEVICES'] = cfg.GPU
+    #os.environ['CUDA_VISIBLE_DEVICES'] = cfg.GPU
 
     yolo = YOLONet()
-    pascal = pascal_voc('train')
+    pascal = bbox_data('train')
 
     solver = Solver(yolo, pascal)
 

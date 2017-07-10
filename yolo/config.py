@@ -4,23 +4,29 @@ import os
 # path and dataset parameter
 #
 
-DATA_PATH = 'data'
+DATA_PATH = '/media/autolab/1tb/data/hsr_clutter_rcnn/'
 
-PASCAL_PATH = os.path.join(DATA_PATH, 'pascal_voc')
 
-CACHE_PATH = os.path.join(PASCAL_PATH, 'cache')
+IMAGE_PATH = DATA_PATH+'images/'
+LABEL_PATH = DATA_PATH+'labels/'
 
-OUTPUT_DIR = os.path.join(PASCAL_PATH, 'output')
+CACHE_PATH = DATA_PATH+'cache/'
 
-WEIGHTS_DIR = os.path.join(PASCAL_PATH, 'weights')
+OUTPUT_DIR = DATA_PATH +'output/'
+
+WEIGHTS_DIR = DATA_PATH + 'weights/'
 
 WEIGHTS_FILE = None
 # WEIGHTS_FILE = os.path.join(DATA_PATH, 'weights', 'YOLO_small.ckpt')
 
-CLASSES = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
-           'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
-           'motorbike', 'person', 'pottedplant', 'sheep', 'sofa',
-           'train', 'tvmonitor']
+CLASSES = ['mustard','syrup','salad_dressing','oatmeal','mayoniase']
+
+# #CLASSES = ['aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
+#            'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
+#            'motorbike', 'person', 'pottedplant', 'sheep', 'sofa',
+# 			'train', 'tvmonitor']
+
+NUM_LABELS = len(CLASSES)
 
 FLIPPED = True
 
@@ -29,15 +35,15 @@ FLIPPED = True
 # model parameter
 #
 
+#IMAGE_SIZE = 250
 IMAGE_SIZE = 448
-
 CELL_SIZE = 7
 
 BOXES_PER_CELL = 2
 
 ALPHA = 0.1
 
-DISP_CONSOLE = False
+DISP_CONSOLE = True
 
 OBJECT_SCALE = 1.0
 NOOBJECT_SCALE = 1.0
@@ -61,17 +67,17 @@ STAIRCASE = True
 
 BATCH_SIZE = 45
 
-MAX_ITER = 15000
+MAX_ITER = 10000
 
 SUMMARY_ITER = 10
 
-SAVE_ITER = 1000
+SAVE_ITER = 100
 
 
 #
 # test parameter
 #
 
+#THRESHOLD = 0.0008
 THRESHOLD = 0.2
-
 IOU_THRESHOLD = 0.5
