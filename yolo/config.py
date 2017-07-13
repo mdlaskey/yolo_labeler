@@ -4,7 +4,7 @@ import os
 # path and dataset parameter
 #
 
-DATA_PATH = '/media/autolab/1tb/data/hsr_clutter_rcnn/'
+DATA_PATH = '/Users/chrispowers/Documents/research/yolo_labeler/hsr_clutter_rcnn/'
 
 
 IMAGE_PATH = DATA_PATH+'images/'

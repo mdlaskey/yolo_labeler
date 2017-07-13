@@ -19,7 +19,7 @@ import random
 import IPython
 
 # colors for the bboxes
-COLORS = ['red', 'blue', 'olive', 'teal', 'cyan', 'green', 'black']
+COLORS = ['red', 'blue', 'cyan', 'green', 'black']
 # image sizes for the examples
 SIZE = 256, 256
 
@@ -77,6 +77,15 @@ class LabelTool():
         self.parent.bind("s", self.cancelBBox)
         self.parent.bind("a", self.prevImage) # press 'a' to go backforward
         self.parent.bind("d", self.nextImage) # press 'd' to go forward
+
+        # for ease of use
+        self.parent.bind("f", lambda event: self.delBBox())
+        self.parent.bind("q", lambda event: self.class_key_update("q"))
+        self.parent.bind("w", lambda event: self.class_key_update("w"))
+        self.parent.bind("e", lambda event: self.class_key_update("e"))
+        self.parent.bind("r", lambda event: self.class_key_update("r"))
+        self.parent.bind("t", lambda event: self.class_key_update("t"))
+
         self.mainPanel.grid(row = 1, column = 1, rowspan = 4, sticky = W+N)
 
         # choose class
@@ -148,26 +157,36 @@ class LabelTool():
 ##            return
         # get image list
         self.imageDir = cfg.IMAGE_PATH
-        print self.imageDir 
+        # print self.imageDir
         #print self.category
-        
+
         self.imageList = glob.glob(os.path.join(self.imageDir, '*.png'))
-        print self.imageList
+        # print self.imageList
         if len(self.imageList) == 0:
             print 'No .JPG images found in the specified dir!'
             return
 
+        #get label list
+        self.labelDir = cfg.LABEL_PATH
+        self.labelListOrig = glob.glob(os.path.join(self.labelDir, '*.p'))
+        self.labelList = [os.path.split(label)[-1].split('.')[0] for label in self.labelListOrig]
+
+        #remove already labeled images
+        self.imageList = [img for img in self.imageList if os.path.split(img)[-1].split('.')[0] not in self.labelList]
+        #to review already labelled ones
+        # self.imageList = [img for img in self.imageList if os.path.split(img)[-1].split('.')[0] in self.labelList]
+
         # default to the 1st image in the collection
         self.cur = 1
         self.total = len(self.imageList)
-
+        print("total is " + str(self.total))
          # set up output dir
         self.outDir = cfg.LABEL_PATH
 
         # load example bboxes
         #self.egDir = os.path.join(r'./Examples', '%03d' %(self.category))
         self.egDir = os.path.join(r'./Examples/demo')
-        print os.path.exists(self.egDir)
+        # print os.path.exists(self.egDir)
         if not os.path.exists(self.egDir):
             return
         filelist = glob.glob(os.path.join(self.egDir, '*.png'))
@@ -190,6 +209,7 @@ class LabelTool():
     def loadImage(self):
         # load image
         imagepath = self.imageList[self.cur - 1]
+
         self.img = Image.open(imagepath)
         self.tkimg = ImageTk.PhotoImage(self.img)
         self.mainPanel.config(width = max(self.tkimg.width(), 400), height = max(self.tkimg.height(), 400))
@@ -199,30 +219,49 @@ class LabelTool():
         # load labels
         self.clearBBox()
         self.imagename = os.path.split(imagepath)[-1].split('.')[0]
-        labelname = self.imagename + '.txt'
+        labelname = self.imagename + '.p'
         self.labelfilename = os.path.join(self.outDir, labelname)
         bbox_cnt = 0
+        # print('testing loading of label')
+        # print(self.labelfilename)
+        # print(os.path.exists(self.labelfilename))
         if os.path.exists(self.labelfilename):
-            with open(self.labelfilename) as f:
-                for (i, line) in enumerate(f):
-                    if i == 0:
-                        bbox_cnt = int(line.strip())
-                        continue
-                    # tmp = [int(t.strip()) for t in line.split()]
-                    tmp = line.split()
-                    #print tmp
-                    self.bboxList.append(tuple(tmp))
-                    tmpId = self.mainPanel.create_rectangle(int(tmp[0]), int(tmp[1]), \
-                                                            int(tmp[2]), int(tmp[3]), \
-                                                            width = 2, \
-                                                            outline = COLORS[(len(self.bboxList)-1) % len(COLORS)])
-                    # print tmpId
-                    self.bboxIdList.append(tmpId)
-                    self.listbox.insert(END, '%s : (%d, %d) -> (%d, %d)' %(tmp[4],int(tmp[0]), int(tmp[1]), \
-                    												  int(tmp[2]), int(tmp[3])))
-                    self.listbox.itemconfig(len(self.bboxIdList) - 1, fg = COLORS[(len(self.bboxIdList) - 1) % len(COLORS)])
+            label = pickle.load( open(self.labelfilename, "rb") )
+            for obj in label['objects']:
+                curr_bbox = list(obj['box_index'])
+                curr_bbox.append(cfg.CLASSES[obj['num_class_label']])
+                tmp = curr_bbox
+                self.bboxList.append(tuple(curr_bbox))
 
+                tmpId = self.mainPanel.create_rectangle(int(tmp[0]), int(tmp[1]), \
+                                                        int(tmp[2]), int(tmp[3]), \
+                                                        width = 2, \
+                                                        outline = COLORS[(len(self.bboxList)-1) % len(COLORS)])
+                # print tmpId
+                self.bboxIdList.append(tmpId)
+                self.listbox.insert(END, '%s : (%d, %d) -> (%d, %d)' %(tmp[4],int(tmp[0]), int(tmp[1]), \
+                												  int(tmp[2]), int(tmp[3])))
+                self.listbox.itemconfig(len(self.bboxIdList) - 1, fg = COLORS[(len(self.bboxIdList) - 1) % len(COLORS)])
+            # print("loaded label")
 
+            # with open(self.labelfilename) as f:
+            #     for (i, line) in enumerate(f):
+            #         if i == 0:
+            #             bbox_cnt = int(line.strip())
+            #             continue
+            #         # tmp = [int(t.strip()) for t in line.split()]
+            #         tmp = line.split()
+            #         #print tmp
+            #         self.bboxList.append(tuple(tmp))
+            #         tmpId = self.mainPanel.create_rectangle(int(tmp[0]), int(tmp[1]), \
+            #                                                 int(tmp[2]), int(tmp[3]), \
+            #                                                 width = 2, \
+            #                                                 outline = COLORS[(len(self.bboxList)-1) % len(COLORS)])
+            #         # print tmpId
+            #         self.bboxIdList.append(tmpId)
+            #         self.listbox.insert(END, '%s : (%d, %d) -> (%d, %d)' %(tmp[4],int(tmp[0]), int(tmp[1]), \
+            #         												  int(tmp[2]), int(tmp[3])))
+            #         self.listbox.itemconfig(len(self.bboxIdList) - 1, fg = COLORS[(len(self.bboxIdList) - 1) % len(COLORS)])
 
     def saveImage(self):
 
@@ -231,7 +270,7 @@ class LabelTool():
         objects = []
         for bbox in self.bboxList:
             obj = {}
-    
+
             obj['box_index'] = bbox[0:4]
             obj['num_class_label'] = cfg.CLASSES.index(bbox[4])
             objects.append(obj)
@@ -239,7 +278,6 @@ class LabelTool():
         label_data['objects'] = objects
         pickle.dump(label_data, open(self.outDir+self.imagename+'.p','wb'))
         print 'Image No. %d saved' %(self.cur)
-
 
     def mouseClick(self, event):
         if self.STATE['click'] == 0:
@@ -317,6 +355,13 @@ class LabelTool():
     def setClass(self):
     	self.currentLabelclass = self.classcandidate.get()
     	print 'set label class to :',self.currentLabelclass
+
+    def class_key_update(self, class_label):
+        mapping = {"q": ("mustard", 0), "w": ("syrup", 1), "e": ("salad_dressing", 2),
+            "r": ("oatmeal", 3), "t": ("mayoniase", 4)}
+        self.currentLabelclass = mapping[class_label][0]
+        self.classcandidate.current(mapping[class_label][1])
+        print 'set label class to :',self.currentLabelclass
 
 ##    def setImage(self, imagepath = r'test2.png'):
 ##        self.img = Image.open(imagepath)
