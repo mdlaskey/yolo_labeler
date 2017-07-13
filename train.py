@@ -8,6 +8,7 @@ from utils.timer import Timer
 from utils.bbox_data import bbox_data
 from utils.pascal_voc import pascal_voc
 import IPython
+import cPickle as pickle
 slim = tf.contrib.slim
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
@@ -29,6 +30,7 @@ class Solver(object):
         self.save_iter = cfg.SAVE_ITER
         self.output_dir = os.path.join(
             cfg.OUTPUT_DIR, datetime.datetime.now().strftime('%Y_%m_%d_%H_%M'))
+
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
         self.save_cfg()
@@ -79,8 +81,11 @@ class Solver(object):
         train_timer = Timer()
         load_timer = Timer()
 
-        for step in xrange(1, self.max_iter + 1):
+        train_losses = []
+        test_losses = []
 
+        for step in xrange(1, self.max_iter + 1):
+            print("step is " + str(step))
             load_timer.tic()
             images, labels = self.data.get()
             load_timer.toc()
@@ -88,17 +93,19 @@ class Solver(object):
 
             if step % self.summary_iter == 0:
                 if step % (self.summary_iter * 10) == 0:
-
                     train_timer.tic()
                     summary_str, loss, _ = self.sess.run(
                         [self.summary_op, self.net.total_loss, self.train_op],
                         feed_dict=feed_dict)
                     train_timer.toc()
+                    train_losses.append(loss)
 
                     if(step % self.test_iter) == 0:
                         images_t, labels_t = self.data.get_test()
-                        feed_dict_test = {self.net.images : images, self.net.labels: labels}
+                        feed_dict_test = {self.net.images : images_t, self.net.labels: labels_t}
                         test_loss = self.sess.run(self.net.total_loss,feed_dict=feed_dict_test)
+                        print("Test loss: " + str(test_loss))
+                        test_losses.append(test_loss)
 
                     log_str = ('{} Epoch: {}, Step: {}, Learning rate: {},'
                         ' Loss: {:5.3f}\nSpeed: {:.3f}s/iter,'
@@ -128,11 +135,21 @@ class Solver(object):
                 train_timer.toc()
 
             if step % self.save_iter == 0:
-                print('{} Saving checkpoint file to: {}'.format(
-                    datetime.datetime.now().strftime('%m/%d %H:%M:%S'),
-                    self.output_dir))
-                self.all_saver.save(self.sess, self.ckpt_file,
+                # # print('{} Saving checkpoint file to: {}'.format(
+                #     datetime.datetime.now().strftime('%m/%d %H:%M:%S'),
+                #     self.output_dir))
+
+                curr_time = datetime.datetime.now().strftime('%m_%d_%H_%M_%S')
+                real_out = "/media/autolab/1tb/data/hsr_clutter_rcnn/output/"
+                real_ckpt = real_out + curr_time + "save.ckpt"
+                print("saving to " + str(real_out))
+
+                self.all_saver.save(self.sess, real_ckpt,
                                 global_step=self.global_step)
+                loss_dict = {}
+                loss_dict["test"] = test_losses
+                loss_dict["train"] = train_losses
+                pickle.dump(loss_dict, open(real_out + curr_time + "losses.p", 'wb'))
 
     def save_cfg(self):
 

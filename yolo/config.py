@@ -4,8 +4,7 @@ import os
 # path and dataset parameter
 #
 
-DATA_PATH = '/Users/chrispowers/Documents/research/yolo_labeler/hsr_clutter_rcnn/'
-
+DATA_PATH = '/media/autolab/1tb/data/hsr_clutter_rcnn/'
 
 IMAGE_PATH = DATA_PATH+'images/'
 LABEL_PATH = DATA_PATH+'labels/'
@@ -71,10 +70,7 @@ MAX_ITER = 15000
 
 SUMMARY_ITER = 10
 TEST_ITER = 200
-
 SAVE_ITER = 1000
-
-
 #
 # test parameter
 #

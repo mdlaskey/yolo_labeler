@@ -1,6 +1,7 @@
 import os
 import xml.etree.ElementTree as ET
 import numpy as np
+from numpy.random import random
 import cv2
 import cPickle
 import copy
@@ -27,14 +28,17 @@ class bbox_data(object):
         self.phase = phase
         self.rebuild = rebuild
         self.cursor = 0
+        self.t_cursor = 0
         self.epoch = 1
         self.gt_labels = None
+        self.test_labels = None
         self.prepare()
 
     def get(self):
         images = np.zeros((self.batch_size, self.image_size, self.image_size, 3))
         labels = np.zeros((self.batch_size, self.cell_size, self.cell_size, 5+cfg.NUM_LABELS))
         count = 0
+
         while count < self.batch_size:
             imname = self.gt_labels[self.cursor]['imname']
             flipped = self.gt_labels[self.cursor]['flipped']
@@ -45,6 +49,23 @@ class bbox_data(object):
             if self.cursor >= len(self.gt_labels):
                 np.random.shuffle(self.gt_labels)
                 self.cursor = 0
+                self.epoch += 1
+        return images, labels
+
+    def get_test(self):
+        images = np.zeros((self.batch_size, self.image_size, self.image_size, 3))
+        labels = np.zeros((self.batch_size, self.cell_size, self.cell_size, 5+cfg.NUM_LABELS))
+        count = 0
+        while count < self.batch_size:
+            imname = self.test_labels[self.t_cursor]['imname']
+            flipped = self.test_labels[self.t_cursor]['flipped']
+            images[count, :, :, :] = self.image_read(imname, flipped)
+            labels[count, :, :, :] = self.test_labels[self.t_cursor]['label']
+            count += 1
+            self.t_cursor += 1
+            if self.t_cursor >= len(self.test_labels):
+                np.random.shuffle(self.test_labels)
+                self.t_cursor = 0
                 self.epoch += 1
         return images, labels
 
@@ -64,7 +85,16 @@ class bbox_data(object):
     def prepare(self):
         gt_labels = self.load_labels()
         np.random.shuffle(gt_labels)
-        self.gt_labels = gt_labels
+        train_labels = []
+        test_labels = []
+        for datapoint in gt_labels:
+            if (random() > 0.2):
+                train_labels.append(datapoint)
+            else:
+                test_labels.append(datapoint)
+
+        self.gt_labels = train_labels
+        self.test_labels = test_labels
         return gt_labels
 
     def load_labels(self):
@@ -74,6 +104,7 @@ class bbox_data(object):
 
         gt_labels = []
         labels = glob.glob(os.path.join(self.label_path, '*.p'))
+        print(labels)
         for label in labels:
             print label
             imname = self.image_path + 'frame_'+ label[54:-2]+'.png'
@@ -84,7 +115,7 @@ class bbox_data(object):
             #TODO: CHANGE THIS TO BE INDPENDENT OF DIRECTORY PATH
             
             gt_labels.append({'imname': imname, 'label': label_num, 'flipped': False})
-
+  
         return gt_labels
 
  
