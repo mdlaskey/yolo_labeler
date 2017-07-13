@@ -24,6 +24,8 @@ class Solver(object):
         self.decay_rate = cfg.DECAY_RATE
         self.staircase = cfg.STAIRCASE
         self.summary_iter = cfg.SUMMARY_ITER
+        self.test_iter = cfg.TEST_ITER
+
         self.save_iter = cfg.SAVE_ITER
         self.output_dir = os.path.join(
             cfg.OUTPUT_DIR, datetime.datetime.now().strftime('%Y_%m_%d_%H_%M'))
@@ -92,6 +94,11 @@ class Solver(object):
                         [self.summary_op, self.net.total_loss, self.train_op],
                         feed_dict=feed_dict)
                     train_timer.toc()
+
+                    if(step % self.test_iter) == 0:
+                        images_t, labels_t = self.data.get_test()
+                        feed_dict_test = {self.net.images : images, self.net.labels: labels}
+                        test_loss = self.sess.run(self.net.total_loss,feed_dict=feed_dict_test)
 
                     log_str = ('{} Epoch: {}, Step: {}, Learning rate: {},'
                         ' Loss: {:5.3f}\nSpeed: {:.3f}s/iter,'
