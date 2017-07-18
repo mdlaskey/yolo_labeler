@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import os
+import glob
 import cv2
 import argparse
 import yolo.config as cfg
@@ -37,7 +38,7 @@ class Detector(object):
             y = int(result[i][2])
             w = int(result[i][3] / 2)
             h = int(result[i][4] / 2)
-            IPython.embed()
+            #IPython.embed()
             cv2.rectangle(img, (x - w, y - h), (x + w, y + h), (0, 255, 0), 2)
             cv2.rectangle(img, (x - w, y - h - 20),
                           (x + w, y - h), (125, 125, 125), -1)
@@ -163,8 +164,10 @@ class Detector(object):
         print('Average detecting time: {:.3f}s'.format(detect_timer.average_time))
 
         self.draw_result(image, result)
-        cv2.imshow('Image', image)
-        cv2.waitKey(wait)
+        # cv2.imshow('Image', image)
+        # cv2.waitKey(wait)
+        framename = os.path.split(imname)[-1].split('.')[0]
+        cv2.imwrite("heldOutTests/" + framename + ".png", image)
 
 
 def main():
@@ -178,7 +181,8 @@ def main():
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
     yolo = YOLONet(False)
-    weight_file = '/home/autolab/Workspaces/michael_working/yolo_tensorflow/data/pascal_voc/weights/save.ckpt-100'#os.path.join(args.data_dir, args.weight_dir, args.weights)
+    weight_file = "/media/autolab/1tb/data/hsr_clutter_rcnn/output/07_14_15_27_17save.ckpt-12000"
+    #weight_file = '/home/autolab/Workspaces/michael_working/yolo_tensorflow/data/pascal_voc/weights/save.ckpt-100'#os.path.join(args.data_dir, args.weight_dir, args.weights)
     #weight_file = os.path.join(args.data_dir, args.weight_dir, args.weights)
 
     detector = Detector(yolo, weight_file)
@@ -187,10 +191,18 @@ def main():
     # cap = cv2.VideoCapture(-1)
     # detector.camera_detector(cap)
 
-    # detect from image file
-    imname = cfg.IMAGE_PATH + 'frame_1771.png'
+    # detect from held out image file
+
+    imageList = glob.glob(os.path.join(cfg.IMAGE_PATH, '*.png'))
+    labelListOrig = glob.glob(os.path.join(cfg.LABEL_PATH, '*.p'))
+    labelList = [os.path.split(label)[-1].split('.')[0] for label in labelListOrig]
+    #remove labeled images
+    imageList = [img for img in imageList if os.path.split(img)[-1].split('.')[0] not in labelList]
+
+    #imname = cfg.IMAGE_PATH + 'frame_1000.png'
     #imname = 'test/person.jpg' 
-    detector.image_detector(imname)
+    for imname in imageList[:100]:
+        detector.image_detector(imname)
 
 
 if __name__ == '__main__':

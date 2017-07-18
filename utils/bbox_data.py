@@ -34,7 +34,7 @@ class bbox_data(object):
         self.test_labels = None
         self.prepare()
 
-    def get(self):
+    def get(self, noise=False):
         images = np.zeros((self.batch_size, self.image_size, self.image_size, 3))
         labels = np.zeros((self.batch_size, self.cell_size, self.cell_size, 5+cfg.NUM_LABELS))
         count = 0
@@ -42,7 +42,7 @@ class bbox_data(object):
         while count < self.batch_size:
             imname = self.gt_labels[self.cursor]['imname']
             flipped = self.gt_labels[self.cursor]['flipped']
-            images[count, :, :, :] = self.image_read(imname, flipped)
+            images[count, :, :, :] = self.image_read(imname, flipped, noise=noise)
             labels[count, :, :, :] = self.gt_labels[self.cursor]['label']
             count += 1
             self.cursor += 1
@@ -69,18 +69,33 @@ class bbox_data(object):
                 self.epoch += 1
         return images, labels
 
-    def image_read(self, imname, flipped=False):
+    def image_read(self, imname, flipped=False,noise=False):
         image = cv2.imread(imname)
 
         image = cv2.resize(image, (self.image_size, self.image_size))
         # cv2.imshow('debug',image)
         # cv2.waitKey(30)
         #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32)
+        
+        #with noise, no longer guaranteed to be between 0 and 255
+        if noise:
+            image = self.add_gnoise(image)
 
         image = (image / 255.0) * 2.0 - 1.0
         if flipped:
             image = image[:, ::-1, :]
+    
         return image
+
+    #from lighting tool
+    def add_gnoise(self, img):
+        row,col,ch = img.shape
+        mean = 0
+        var = 0.1
+        sigma = 10
+        gauss = np.random.normal(mean, sigma, (row,col,ch))
+        gauss = gauss.reshape(row,col,ch)
+        return img + gauss
 
     def prepare(self):
         gt_labels = self.load_labels()

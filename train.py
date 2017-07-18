@@ -76,7 +76,7 @@ class Solver(object):
 
         return
 
-    def train(self):
+    def train(self,noise=False):
 
         train_timer = Timer()
         load_timer = Timer()
@@ -87,7 +87,7 @@ class Solver(object):
         for step in xrange(1, self.max_iter + 1):
             print("step is " + str(step))
             load_timer.tic()
-            images, labels = self.data.get()
+            images, labels = self.data.get(noise=noise)
             load_timer.toc()
             feed_dict = {self.net.images: images, self.net.labels: labels}
 
@@ -195,7 +195,7 @@ def main():
     solver = Solver(yolo, pascal)
 
     print('Start training ...')
-    solver.train()
+    solver.train(noise=True)
     print('Done training.')
 
 if __name__ == '__main__':
