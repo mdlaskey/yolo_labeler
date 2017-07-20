@@ -31,8 +31,15 @@ class Solver(object):
         self.output_dir = os.path.join(
             cfg.OUTPUT_DIR, datetime.datetime.now().strftime('%Y_%m_%d_%H_%M'))
 
+        self.train_stats_dir = os.path.join(
+            cfg.TRAIN_STATS_DIR, datetime.datetime.now().strftime('%Y_%m_%d_%H_%M'))
+
+        self.test_stats_dir = os.path.join(
+            cfg.TEST_STATS_DIR, datetime.datetime.now().strftime('%Y_%m_%d_%H_%M'))
+
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
+
         self.save_cfg()
 
         self.variable_to_restore = slim.get_variables_to_restore()
@@ -44,17 +51,24 @@ class Solver(object):
         #self.saver = tf.train.Saver()
         self.ckpt_file = os.path.join(self.output_dir, 'save.ckpt')
         self.summary_op = tf.summary.merge_all()
-        self.writer = tf.summary.FileWriter(self.output_dir, flush_secs=60)
+
+
+        self.writer_train = tf.summary.FileWriter(self.train_stats_dir, flush_secs=60)
+        self.writer_test = tf.summary.FileWriter(self.test_stats_dir, flush_secs = 60)
+
 
         self.global_step = tf.get_variable(
             'global_step', [], initializer=tf.constant_initializer(0), trainable=False)
         self.learning_rate = tf.train.exponential_decay(
             self.initial_learning_rate, self.global_step, self.decay_steps,
             self.decay_rate, self.staircase, name='learning_rate')
+       
         self.optimizer = tf.train.GradientDescentOptimizer(
             learning_rate=self.learning_rate).minimize(
             self.net.total_loss, global_step=self.global_step)
         self.ema = tf.train.ExponentialMovingAverage(decay=0.9999)
+
+        
         self.averages_op = self.ema.apply(tf.trainable_variables())
         with tf.control_dependencies([self.optimizer]):
             self.train_op = tf.group(self.averages_op)
@@ -70,13 +84,14 @@ class Solver(object):
          
             self.saver.restore(self.sess, self.weights_file)
 
-        self.writer.add_graph(self.sess.graph)
+        self.writer_train.add_graph(self.sess.graph)
+        self.writer_test.add_graph(self.sess.graph)
 
     def variables_to_restore(self):
 
         return
 
-    def train(self,noise=False):
+    def train(self):
 
         train_timer = Timer()
         load_timer = Timer()
@@ -87,7 +102,7 @@ class Solver(object):
         for step in xrange(1, self.max_iter + 1):
             print("step is " + str(step))
             load_timer.tic()
-            images, labels = self.data.get(noise=noise)
+            images, labels = self.data.get()
             load_timer.toc()
             feed_dict = {self.net.images: images, self.net.labels: labels}
 
@@ -103,9 +118,15 @@ class Solver(object):
                     if(step % self.test_iter) == 0:
                         images_t, labels_t = self.data.get_test()
                         feed_dict_test = {self.net.images : images_t, self.net.labels: labels_t}
-                        test_loss = self.sess.run(self.net.total_loss,feed_dict=feed_dict_test)
+
+                        summary_str, test_loss, _ = self.sess.run(
+                            [self.summary_op, self.net.total_loss, self.train_op],
+                            feed_dict=feed_dict_test)
+
                         print("Test loss: " + str(test_loss))
-                        test_losses.append(test_loss)
+                        
+
+                        self.writer_train.add_summary(summary_str, step)
 
                     log_str = ('{} Epoch: {}, Step: {}, Learning rate: {},'
                         ' Loss: {:5.3f}\nSpeed: {:.3f}s/iter,'
@@ -127,7 +148,7 @@ class Solver(object):
                         feed_dict=feed_dict)
                     train_timer.toc()
 
-                self.writer.add_summary(summary_str, step)
+                self.writer_train.add_summary(summary_str, step)
 
             else:
                 train_timer.tic()
@@ -140,7 +161,7 @@ class Solver(object):
                 #     self.output_dir))
 
                 curr_time = datetime.datetime.now().strftime('%m_%d_%H_%M_%S')
-                real_out = "/media/autolab/1tb/data/hsr_clutter_rcnn/output/"
+                real_out = cfg.OUTPUT_DIR
                 real_ckpt = real_out + curr_time + "save.ckpt"
                 print("saving to " + str(real_out))
 
@@ -162,13 +183,13 @@ class Solver(object):
 
 
 def update_config_paths(data_dir, weights_file):
-    cfg.DATA_PATH = data_dir
-    cfg.PASCAL_PATH = os.path.join(data_dir, 'pascal_voc')
-    cfg.CACHE_PATH = os.path.join(cfg.PASCAL_PATH, 'cache')
-    cfg.OUTPUT_DIR = os.path.join(cfg.PASCAL_PATH, 'output')
-    cfg.WEIGHTS_DIR = os.path.join(cfg.PASCAL_PATH, 'weights')
+    
+    PASCAL_PATH = os.path.join(data_dir, 'pascal_voc')
+    CACHE_PATH = os.path.join(PASCAL_PATH, 'cache')
+    OUTPUT_DIR = os.path.join(PASCAL_PATH, 'output')
+    WEIGHTS_DIR = os.path.join(PASCAL_PATH, 'weights')
 
-    cfg.WEIGHTS_FILE = os.path.join(cfg.WEIGHTS_DIR, weights_file)
+    WEIGHTS_FILE = os.path.join(WEIGHTS_DIR, weights_file)
     #IPython.embed()
 
 
@@ -195,7 +216,7 @@ def main():
     solver = Solver(yolo, pascal)
 
     print('Start training ...')
-    solver.train(noise=True)
+    solver.train()
     print('Done training.')
 
 if __name__ == '__main__':

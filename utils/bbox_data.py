@@ -6,14 +6,13 @@ import cv2
 import cPickle
 import copy
 import glob
+from utils.augment_lighting import get_lighting
 import yolo.config as cfg
 import cPickle as pickle
 import IPython
 
 class bbox_data(object):
     def __init__(self, phase, rebuild=False):
-        self.devkil_path = os.path.join(cfg.PASCAL_PATH, 'VOCdevkit')
-        self.data_path = os.path.join(self.devkil_path, 'VOC2007')
 
         self.cache_path = cfg.CACHE_PATH
         self.image_path = cfg.IMAGE_PATH
@@ -25,6 +24,7 @@ class bbox_data(object):
         self.classes = cfg.CLASSES
         self.class_to_ind = dict(zip(self.classes, xrange(len(self.classes))))
         self.flipped = cfg.FLIPPED
+        self.noise = cfg.LIGHTING_NOISE 
         self.phase = phase
         self.rebuild = rebuild
         self.cursor = 0
@@ -42,9 +42,18 @@ class bbox_data(object):
         while count < self.batch_size:
             imname = self.gt_labels[self.cursor]['imname']
             flipped = self.gt_labels[self.cursor]['flipped']
-            images[count, :, :, :] = self.image_read(imname, flipped, noise=noise)
-            labels[count, :, :, :] = self.gt_labels[self.cursor]['label']
-            count += 1
+
+            images_read = self.image_read(imname,flipped)
+
+
+            for image in images_read:
+                #IPython.embed()
+                images[count, :, :, :] = image
+                labels[count, :, :, :] = self.gt_labels[self.cursor]['label']
+                count += 1
+                if(count == self.batch_size):
+                    break
+
             self.cursor += 1
             if self.cursor >= len(self.gt_labels):
                 np.random.shuffle(self.gt_labels)
@@ -59,7 +68,7 @@ class bbox_data(object):
         while count < self.batch_size:
             imname = self.test_labels[self.t_cursor]['imname']
             flipped = self.test_labels[self.t_cursor]['flipped']
-            images[count, :, :, :] = self.image_read(imname, flipped)
+            images[count, :, :, :] = self.image_read_test(imname, flipped)
             labels[count, :, :, :] = self.test_labels[self.t_cursor]['label']
             count += 1
             self.t_cursor += 1
@@ -73,29 +82,37 @@ class bbox_data(object):
         image = cv2.imread(imname)
 
         image = cv2.resize(image, (self.image_size, self.image_size))
-        # cv2.imshow('debug',image)
-        # cv2.waitKey(30)
+        
         #image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32)
         
         #with noise, no longer guaranteed to be between 0 and 255
-        if noise:
-            image = self.add_gnoise(image)
+        if cfg.LIGHTING_NOISE:
+            images =  get_lighting(image)
+            
+            n_images = []
+            for img in images:
+                # cv2.imshow('debug',img)
+                # cv2.waitKey(30)
+                n_images.append((image / 255.0) * 2.0 - 1.0) 
 
-        image = (image / 255.0) * 2.0 - 1.0
+            return n_images
+
+        
         if flipped:
             image = image[:, ::-1, :]
-    
+        
+        image = (image / 255.0) * 2.0 - 1.0
         return image
 
-    #from lighting tool
-    def add_gnoise(self, img):
-        row,col,ch = img.shape
-        mean = 0
-        var = 0.1
-        sigma = 10
-        gauss = np.random.normal(mean, sigma, (row,col,ch))
-        gauss = gauss.reshape(row,col,ch)
-        return img + gauss
+    def image_read_test(self, imname, flipped=False,noise=False):
+        image = cv2.imread(imname)
+
+        image = cv2.resize(image, (self.image_size, self.image_size))
+        
+        
+        
+        image = (image / 255.0) * 2.0 - 1.0
+        return image
 
     def prepare(self):
         gt_labels = self.load_labels()
@@ -114,14 +131,11 @@ class bbox_data(object):
 
     def load_labels(self):
        
-
-        print('Processing gt_labels from: ' + self.data_path)
-
         gt_labels = []
         labels = glob.glob(os.path.join(self.label_path, '*.p'))
-        print(labels)
+      
         for label in labels:
-            print label
+           
             imname = self.image_path + 'frame_'+ label[54:-2]+'.png'
             label_num, num = self.load_bbox_annotation(label,imname)
             if num == 0:
@@ -164,8 +178,7 @@ class bbox_data(object):
             y2 = max(min((float(box_ind[3]) - 1) * h_ratio, self.image_size - 1), 0)
 
             boxes = [(x2 + x1) / 2.0, (y2 + y1) / 2.0, x2 - x1, y2 - y1]
-            print "CLASS ", class_label
-            print boxes
+           
             x_ind = int(box_ind[0] * self.cell_size / self.image_size)
             y_ind = int(box_ind[1] * self.cell_size / self.image_size)
 

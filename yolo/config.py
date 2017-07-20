@@ -13,6 +13,9 @@ CACHE_PATH = DATA_PATH+'cache/'
 
 OUTPUT_DIR = DATA_PATH +'output/'
 
+TRAIN_STATS_DIR = OUTPUT_DIR + 'train_stats/'
+TEST_STATS_DIR = OUTPUT_DIR + 'test_stats/'
+
 WEIGHTS_DIR = DATA_PATH + 'weights/'
 
 WEIGHTS_FILE = None
@@ -27,7 +30,8 @@ CLASSES = ['mustard','syrup','salad_dressing','oatmeal','mayoniase']
 
 NUM_LABELS = len(CLASSES)
 
-FLIPPED = True
+FLIPPED = False
+LIGHTING_NOISE = True
 
 
 #
@@ -69,7 +73,7 @@ BATCH_SIZE = 45
 MAX_ITER = 15000
 
 SUMMARY_ITER = 10
-TEST_ITER = 200
+TEST_ITER = 20
 SAVE_ITER = 1000
 #
 # test parameter

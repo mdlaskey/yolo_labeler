@@ -45,7 +45,7 @@ class YOLONet(object):
                       images,
                       num_outputs,
                       alpha,
-                      keep_prob=1.0,
+                      keep_prob=0.5,
                       is_training=True,
                       scope='yolo'):
        

@@ -8,6 +8,9 @@ import yolo.config as cfg
 from yolo.yolo_net import YOLONet
 from utils.timer import Timer
 import IPython
+import sys, os
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 class Detector(object):
 
@@ -167,7 +170,7 @@ class Detector(object):
         # cv2.imshow('Image', image)
         # cv2.waitKey(wait)
         framename = os.path.split(imname)[-1].split('.')[0]
-        cv2.imwrite("heldOutTests/" + framename + ".png", image)
+        cv2.imwrite("heldOutTests2/" + framename + ".png", image)
 
 
 def main():
@@ -181,7 +184,7 @@ def main():
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
     yolo = YOLONet(False)
-    weight_file = "/media/autolab/1tb/data/hsr_clutter_rcnn/output/07_14_15_27_17save.ckpt-12000"
+    weight_file = "/home/autolab/Workspaces/michael_working/yolo_tensorflow/data/pascal_voc/output07_20_09_37_29save.ckpt-15000"
     #weight_file = '/home/autolab/Workspaces/michael_working/yolo_tensorflow/data/pascal_voc/weights/save.ckpt-100'#os.path.join(args.data_dir, args.weight_dir, args.weights)
     #weight_file = os.path.join(args.data_dir, args.weight_dir, args.weights)
 
