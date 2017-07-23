@@ -4,7 +4,12 @@ import os
 # path and dataset parameter
 #
 
-DATA_PATH = '/media/autolab/1tb/data/hsr_clutter_rcnn/'
+ROOT_DIR = '/media/autolab/1tb/data/'
+
+
+#DATA_PATH = ROOT_DIR + 'hsr_clutter_rcnn/'
+
+DATA_PATH = ROOT_DIR + 'card_rcnn/'
 
 IMAGE_PATH = DATA_PATH+'images/'
 LABEL_PATH = DATA_PATH+'labels/'
