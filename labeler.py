@@ -14,7 +14,7 @@ import ttk
 import os
 import glob
 import cPickle as pickle
-import yolo.config as cfg
+import yolo.config_cards as cfg
 import random
 import IPython
 
@@ -184,24 +184,24 @@ class LabelTool():
         self.outDir = cfg.LABEL_PATH
 
         # load example bboxes
-        #self.egDir = os.path.join(r'./Examples', '%03d' %(self.category))
-        self.egDir = os.path.join(r'./Examples/demo')
-        # print os.path.exists(self.egDir)
-        if not os.path.exists(self.egDir):
-            return
-        filelist = glob.glob(os.path.join(self.egDir, '*.png'))
-        self.tmp = []
-        self.egList = []
-        random.shuffle(filelist)
-        for (i, f) in enumerate(filelist):
-            if i == 3:
-                break
-            im = Image.open(f)
-            r = min(SIZE[0] / im.size[0], SIZE[1] / im.size[1])
-            new_size = int(r * im.size[0]), int(r * im.size[1])
-            self.tmp.append(im.resize(new_size, Image.ANTIALIAS))
-            self.egList.append(ImageTk.PhotoImage(self.tmp[-1]))
-            self.egLabels[i].config(image = self.egList[-1], width = SIZE[0], height = SIZE[1])
+        # #self.egDir = os.path.join(r'./Examples', '%03d' %(self.category))
+        # self.egDir = os.path.join(r'./Examples/demo')
+        # # print os.path.exists(self.egDir)
+        # if not os.path.exists(self.egDir):
+        #     return
+        # filelist = glob.glob(os.path.join(self.egDir, '*.png'))
+        # self.tmp = []
+        # self.egList = []
+        # random.shuffle(filelist)
+        # for (i, f) in enumerate(filelist):
+        #     if i == 3:
+        #         break
+        #     im = Image.open(f)
+        #     r = min(SIZE[0] / im.size[0], SIZE[1] / im.size[1])
+        #     new_size = int(r * im.size[0]), int(r * im.size[1])
+        #     self.tmp.append(im.resize(new_size, Image.ANTIALIAS))
+        #     self.egList.append(ImageTk.PhotoImage(self.tmp[-1]))
+        #     self.egLabels[i].config(image = self.egList[-1], width = SIZE[0], height = SIZE[1])
 
         self.loadImage()
         print '%d images loaded from %s' %(self.total, s)
@@ -212,6 +212,7 @@ class LabelTool():
 
         self.img = Image.open(imagepath)
         self.tkimg = ImageTk.PhotoImage(self.img)
+        
         self.mainPanel.config(width = max(self.tkimg.width(), 400), height = max(self.tkimg.height(), 400))
         self.mainPanel.create_image(0, 0, image = self.tkimg, anchor=NW)
         self.progLabel.config(text = "%04d/%04d" %(self.cur, self.total))
@@ -239,29 +240,13 @@ class LabelTool():
                                                         outline = COLORS[(len(self.bboxList)-1) % len(COLORS)])
                 # print tmpId
                 self.bboxIdList.append(tmpId)
+                
                 self.listbox.insert(END, '%s : (%d, %d) -> (%d, %d)' %(tmp[4],int(tmp[0]), int(tmp[1]), \
                 												  int(tmp[2]), int(tmp[3])))
                 self.listbox.itemconfig(len(self.bboxIdList) - 1, fg = COLORS[(len(self.bboxIdList) - 1) % len(COLORS)])
-            # print("loaded label")
 
-            # with open(self.labelfilename) as f:
-            #     for (i, line) in enumerate(f):
-            #         if i == 0:
-            #             bbox_cnt = int(line.strip())
-            #             continue
-            #         # tmp = [int(t.strip()) for t in line.split()]
-            #         tmp = line.split()
-            #         #print tmp
-            #         self.bboxList.append(tuple(tmp))
-            #         tmpId = self.mainPanel.create_rectangle(int(tmp[0]), int(tmp[1]), \
-            #                                                 int(tmp[2]), int(tmp[3]), \
-            #                                                 width = 2, \
-            #                                                 outline = COLORS[(len(self.bboxList)-1) % len(COLORS)])
-            #         # print tmpId
-            #         self.bboxIdList.append(tmpId)
-            #         self.listbox.insert(END, '%s : (%d, %d) -> (%d, %d)' %(tmp[4],int(tmp[0]), int(tmp[1]), \
-            #         												  int(tmp[2]), int(tmp[3])))
-            #         self.listbox.itemconfig(len(self.bboxIdList) - 1, fg = COLORS[(len(self.bboxIdList) - 1) % len(COLORS)])
+
+
 
     def saveImage(self):
 
@@ -304,6 +289,7 @@ class LabelTool():
         if 1 == self.STATE['click']:
             if self.bboxId:
                 self.mainPanel.delete(self.bboxId)
+
             self.bboxId = self.mainPanel.create_rectangle(self.STATE['x'], self.STATE['y'], \
                                                             event.x, event.y, \
                                                             width = 2, \
@@ -357,7 +343,7 @@ class LabelTool():
     	print 'set label class to :',self.currentLabelclass
 
     def class_key_update(self, class_label):
-        mapping = {"q": ("mustard", 0), "w": ("syrup", 1), "e": ("salad_dressing", 2),
+        mapping = {"q": ("up", 0), "w": ("down", 1), "e": ("salad_dressing", 2),
             "r": ("oatmeal", 3), "t": ("mayoniase", 4)}
         self.currentLabelclass = mapping[class_label][0]
         self.classcandidate.current(mapping[class_label][1])
