@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-import yolo.config as cfg
+import yolo.config_card as cfg
 import IPython
 
 slim = tf.contrib.slim
@@ -55,18 +55,18 @@ class YOLONet(object):
                                 weights_initializer=tf.truncated_normal_initializer(0.0, 0.01),
                                 weights_regularizer=slim.l2_regularizer(0.0005)):
              
-                net = tf.pad(images, np.array([[0, 0], [1, 1], [1, 1], [0, 0]]), name='pad_27_f')
-                net = slim.conv2d(net, 1024, 3, 2, padding='VALID', scope='conv_28_f')
-                net = slim.conv2d(net, 1024, 3, scope='conv_29_f')
-                net = slim.conv2d(net, 1024, 3, scope='conv_30_f')
-                net = tf.transpose(net, [0, 3, 1, 2], name='trans_31_f')
-                net = slim.flatten(net, scope='flat_32_f')
-                net = slim.fully_connected(net, 512, scope='fc_33_f')
-                net = slim.fully_connected(net, 4096, scope='fc_34_f')
+                net = tf.pad(images, np.array([[0, 0], [1, 1], [1, 1], [0, 0]]), name='pad_27')
+                net = slim.conv2d(net, 1024, 3, 2, padding='VALID', scope='conv_28')
+                net = slim.conv2d(net, 1024, 3, scope='conv_29')
+                net = slim.conv2d(net, 1024, 3, scope='conv_30')
+                net = tf.transpose(net, [0, 3, 1, 2], name='trans_31')
+                net = slim.flatten(net, scope='flat_32')
+                net = slim.fully_connected(net, 512, scope='fc_33')
+                net = slim.fully_connected(net, 4096, scope='fc_34')
                 net = slim.dropout(net, keep_prob=keep_prob,
-                                   is_training=is_training, scope='dropout_35_f')
+                                   is_training=is_training, scope='dropout_35')
                 net = slim.fully_connected(net, num_outputs,
-                                           activation_fn=None, scope='fc_36_f')
+                                           activation_fn=None, scope='fc_36')
         return net
 
     def calc_iou(self, boxes1, boxes2, scope='iou'):

@@ -2,7 +2,7 @@ import tensorflow as tf
 import datetime
 import os
 import argparse
-import yolo.config as cfg
+import yolo.config_card as cfg
 from yolo.yolo_net_fast import YOLONet
 from utils.timer import Timer
 from utils.pre_feature_data import bbox_data
@@ -43,8 +43,15 @@ class Solver(object):
         self.save_cfg()
 
         
+        self.variable_to_restore = slim.get_variables_to_restore()
+        self.variables_to_restore = self.variable_to_restore[42:52]
+
+        count = 0
+        for var in self.variables_to_restore:
+            print str(count) + " "+ var.name
+            count += 1
         #tf.global_variables_initializer()
-        self.saver = tf.train.Saver()
+        self.saver = tf.train.Saver(self.variables_to_restore, max_to_keep=None)
 
         self.all_saver = tf.train.Saver()
         #self.saver = tf.train.Saver()
