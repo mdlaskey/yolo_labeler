@@ -78,6 +78,9 @@ class bbox_data(object):
                 self.epoch += 1
         return images, labels
 
+
+    
+
     def image_read(self, imname, flipped=False,noise=False):
         image = cv2.imread(imname)
 

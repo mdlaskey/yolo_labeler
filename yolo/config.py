@@ -7,9 +7,9 @@ import os
 ROOT_DIR = '/media/autolab/1tb/data/'
 
 
-#DATA_PATH = ROOT_DIR + 'hsr_clutter_rcnn/'
+DATA_PATH = ROOT_DIR + 'hsr_clutter_rcnn/'
 
-DATA_PATH = ROOT_DIR + 'card_rcnn/'
+#DATA_PATH = ROOT_DIR + 'card_rcnn/'
 
 IMAGE_PATH = DATA_PATH+'images/'
 LABEL_PATH = DATA_PATH+'labels/'
@@ -22,6 +22,8 @@ TRAIN_STATS_DIR = OUTPUT_DIR + 'train_stats/'
 TEST_STATS_DIR = OUTPUT_DIR + 'test_stats/'
 
 WEIGHTS_DIR = DATA_PATH + 'weights/'
+
+PRE_TRAINED_DIR = 'data/pascal_voc/weights/'
 
 WEIGHTS_FILE = None
 # WEIGHTS_FILE = os.path.join(DATA_PATH, 'weights', 'YOLO_small.ckpt')
@@ -87,3 +89,8 @@ SAVE_ITER = 1000
 #THRESHOLD = 0.0008
 THRESHOLD = 0.2
 IOU_THRESHOLD = 0.5
+
+
+#FAST PARAMS
+FILTER_SIZE = 14
+NUM_FILTERS = 1024
