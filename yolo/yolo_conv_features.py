@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-import config as cfg
+import config_card as cfg
 import IPython
 import os
 import cv2
