@@ -14,7 +14,11 @@ import ttk
 import os
 import glob
 import cPickle as pickle
+<<<<<<< HEAD
 import yolo.config_cards as cfg
+=======
+import yolo.config_card as cfg
+>>>>>>> 261b613475f64a6c950ffffed50dcfd838d833ff
 import random
 import IPython
 
@@ -343,8 +347,9 @@ class LabelTool():
     	print 'set label class to :',self.currentLabelclass
 
     def class_key_update(self, class_label):
-        mapping = {"q": ("up", 0), "w": ("down", 1), "e": ("salad_dressing", 2),
-            "r": ("oatmeal", 3), "t": ("mayoniase", 4)}
+
+        mapping = {"q": ("up", 0), "w": ("down", 1)}
+
         self.currentLabelclass = mapping[class_label][0]
         self.classcandidate.current(mapping[class_label][1])
         print 'set label class to :',self.currentLabelclass

@@ -2,7 +2,7 @@ import tensorflow as tf
 import datetime
 import os
 import argparse
-import yolo.config as cfg
+import yolo.config_card as cfg
 from yolo.yolo_net_fast import YOLONet
 from utils.timer import Timer
 from utils.pre_feature_data import bbox_data
@@ -26,6 +26,7 @@ class Solver(object):
         self.staircase = cfg.STAIRCASE
         self.summary_iter = cfg.SUMMARY_ITER
         self.test_iter = cfg.TEST_ITER
+        self.viz_debug_iter = cfg.VIZ_DEBUG_ITER
 
         self.save_iter = cfg.SAVE_ITER
         self.output_dir = os.path.join(
@@ -43,8 +44,15 @@ class Solver(object):
         self.save_cfg()
 
         
+        self.variable_to_restore = slim.get_variables_to_restore()
+        self.variables_to_restore = self.variable_to_restore[42:52]
+
+        count = 0
+        for var in self.variables_to_restore:
+            print str(count) + " "+ var.name
+            count += 1
         #tf.global_variables_initializer()
-        self.saver = tf.train.Saver()
+        self.saver = tf.train.Saver(self.variables_to_restore, max_to_keep=None)
 
         self.all_saver = tf.train.Saver()
         #self.saver = tf.train.Saver()
@@ -99,12 +107,14 @@ class Solver(object):
         test_losses = []
 
         for step in xrange(1, self.max_iter + 1):
-            print("step is " + str(step))
+           
             load_timer.tic()
             images, labels = self.data.get()
             load_timer.toc()
             feed_dict = {self.net.images: images, self.net.labels: labels}
 
+            if(step % self.viz_debug_iter) == 0:
+                        self.data.viz_debug(self.sess,self.net)
             if step % self.summary_iter == 0:
                 if step % (self.summary_iter * 10) == 0:
                     train_timer.tic()
@@ -113,6 +123,8 @@ class Solver(object):
                         feed_dict=feed_dict)
                     train_timer.toc()
                     train_losses.append(loss)
+
+                   
 
                     if(step % self.test_iter) == 0:
                         images_t, labels_t = self.data.get_test()

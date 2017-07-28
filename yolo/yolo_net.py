@@ -94,6 +94,26 @@ class YOLONet(object):
                                            activation_fn=None, scope='fc_36')
         return net
 
+
+
+
+    def load_network(self):
+        self.weights_file = cfg.PRE_TRAINED_DIR+"YOLO_small.ckpt"
+        print 'Restoring weights from: ' + self.weights_file
+        self.variable_to_restore = slim.get_variables_to_restore()
+        count = 0
+        for var in self.variable_to_restore:
+            print str(count) + " "+ var.name
+            count += 1
+        
+        self.variables_to_restore = self.variable_to_restore[0:45]
+        #tf.global_variables_initializer()
+        self.saver = tf.train.Saver(self.variables_to_restore, max_to_keep=None)
+        #self.saver = tf.train.Saver()
+
+        self.saver.restore(self.sess, self.weights_file)
+
+    
     def calc_iou(self, boxes1, boxes2, scope='iou'):
         """calculate ious
         Args:
