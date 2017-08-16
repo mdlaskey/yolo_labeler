@@ -92,10 +92,11 @@ class Detector(object):
             print "y ",y
             print "w ",w
             print "h ",h
+            color = np.array([0,255,0])*(0.2+results[i]['prob'])
             cv2.rectangle(img, (x - w, y - h), (x + w, y + h), (0, 255, 0), 2)
-            cv2.rectangle(img, (x - w, y - h - 20),
-                          (x + w, y - h), (125, 125, 125), -1)
-            cv2.putText(img, results[i]['class'] + ' : %.2f' % results[i]['prob'], (x - w + 5, y - h - 7), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.CV_AA)
+            # cv2.rectangle(img, (x - w, y - h - 20),
+            #               (x + w, y - h), (125, 125, 125), -1)
+            # cv2.putText(img, results[i]['class'] + ' : %.2f' % results[i]['prob'], (x - w + 5, y - h - 7), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.CV_AA)
 
     def detect(self,inputs,image):
         img_h, img_w, _ = image.shape
