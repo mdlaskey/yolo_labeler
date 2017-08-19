@@ -14,7 +14,7 @@ import ttk
 import os
 import glob
 import cPickle as pickle
-import yolo.config as cfg
+import configs.config_bed as cfg
 import random
 import IPython
 import cv2
@@ -211,7 +211,7 @@ class QueryLabeler():
     def get_label(self):
 
         
-        #self.current_image = img
+        self.current_image = self.cam.read_color_data()
 
         self.tkimg = ImageTk.PhotoImage(Image.fromarray(self.current_image))
         
@@ -277,8 +277,8 @@ class QueryLabeler():
         for bbox in self.bboxList:
             obj = {}
 
-            obj['box_index'] = bbox[0:4]
-            obj['num_class_label'] = cfg.CLASSES.index(bbox[4])
+            obj['box'] = bbox[0:4]
+            obj['class'] = cfg.CLASSES.index(bbox[4])
             objects.append(obj)
 
         label_data['objects'] = objects
@@ -373,9 +373,10 @@ class QueryLabeler():
         self.classcandidate.current(mapping[class_label][1])
         print 'set label class to :',self.currentLabelclass
 
-    def run(self,img):
+    def run(self,cam):
         #self.parent.resizable(width =  True, height = True)
-        self.current_image = img
+        self.cam = cam
+        #self.current_image = img
         print "running"
         self.parent.mainloop()
 

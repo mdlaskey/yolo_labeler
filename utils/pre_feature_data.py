@@ -158,12 +158,12 @@ class bbox_data(object):
 
                 #ADD LIGHTING SCRIPT 
                 ### get_lighting(img)
-
-                features = self.yc.extract_conv_features(img)
-
-
-
-                gt_labels.append({'imname': imname, 'label': label_num, 'features':features, 'flipped': False})
+                imgs = get_lighting(img)
+                imgs.append(img)
+                
+                for i, im in enumerate(imgs):
+                    features = self.yc.extract_conv_features(im)
+                    gt_labels.append({'imname': imname, 'label': label_num, 'features':features, 'flipped': False})
   
         return gt_labels
 
