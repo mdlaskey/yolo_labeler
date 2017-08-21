@@ -14,11 +14,9 @@ import ttk
 import os
 import glob
 import cPickle as pickle
-<<<<<<< HEAD
-import yolo.config_cards as cfg
-=======
+
 import yolo.config_card as cfg
->>>>>>> 261b613475f64a6c950ffffed50dcfd838d833ff
+
 import random
 import IPython
 
