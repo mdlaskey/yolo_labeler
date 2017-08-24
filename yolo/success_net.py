@@ -7,7 +7,7 @@ import IPython
 slim = tf.contrib.slim
 
 
-class GHNet(object):
+class SNet(object):
 
     def __init__(self, is_training=True):
         self.classes = cfg.CLASSES
@@ -58,6 +58,7 @@ class GHNet(object):
                                    is_training=is_training, scope='dropout_35')
                 net = slim.fully_connected(net, num_outputs,
                                            activation_fn=None, scope='fc_36')
+                net = tf.nn.softmax(net)
 
                 
         return net

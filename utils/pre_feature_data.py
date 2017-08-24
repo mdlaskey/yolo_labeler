@@ -122,9 +122,8 @@ class bbox_data(object):
 
         image = cv2.resize(image, (self.image_size, self.image_size))
         
-        
-        
         image = (image / 255.0) * 2.0 - 1.0
+        
         return image
 
     def prepare(self):

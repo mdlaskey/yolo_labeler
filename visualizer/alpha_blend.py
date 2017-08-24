@@ -4,14 +4,16 @@ import os
 import glob
 import cv2
 import argparse
-import yolo.config_bed_mac as cfg
+import configs.config_bed as cfg
 
 from utils.timer import Timer
 import IPython
-
+from data_aug.draw_cross_hair import DrawPrediction
 #R = 0, B = 1, G = 2
 
 BASE_COLOR = 2
+
+DP = DrawPrediction()
 
 def make_dim_same(b_img,dist):
 
@@ -22,22 +24,17 @@ def make_dim_same(b_img,dist):
     return dist
 
 
-def label_conversion(pose,dist):
+def plot_label_conversion(outImage,dist):
+
+    x,y = np.unravel_index(dist.argmax(),dist.shape)
+
+    pose = [x,y]
+    img = DP.draw_prediction(outImage,pose)
+
+    return img
 
 
-    x = int(pose[0])/cfg.RESOLUTION
-    y = int(pose[1])/cfg.RESOLUTION
-
-  
-    dist[y,x] = 1.0
-
-    return dist
-
-
-def viz_distribution(background,dist,pose=None):
-
-
-    dist = label_conversion(pose,dist)
+def viz_distribution(background,dist):
 
     dist = make_dim_same(background,dist)
 
@@ -60,15 +57,29 @@ def viz_distribution(background,dist,pose=None):
      
     # Multiply the background with ( 1 - alpha )
     background = cv2.multiply(1.0 - dist_c, background)
-     
+    #IPython.embed()
     # Add the masked foreground and background.
     outImage = cv2.add(foreground, background)/255
+
+    outImage = plot_label_conversion(outImage,dist)
 
     #outImage_B = cv2.resize(outImage,(500,500))
 
     return outImage
 
 
+
+def plot_prediction(outImage,pose):
+
+    print pose
+  
+    x = cfg.T_IMAGE_SIZE_W*pose[0]
+    y = cfg.T_IMAGE_SIZE_H*pose[1]
+
+    pose = [x,y]
+    img = DP.draw_prediction(outImage,pose)
+
+    return img
 
    
 

@@ -3,9 +3,9 @@ import datetime
 import os
 import argparse
 import configs.config_bed as cfg
-from yolo.yolo_net_fast import YOLONet
+from yolo.grasp_heat_net import GHNet
 from utils.timer import Timer
-from utils.pre_feature_data import bbox_data
+from utils.grasp_data import grasp_data
 from utils.pascal_voc import pascal_voc
 import IPython
 import cPickle as pickle
@@ -220,9 +220,9 @@ def main():
         update_config_paths(args.data_dir, args.weights)
 
     #os.environ['CUDA_VISIBLE_DEVICES'] = cfg.GPU
-    pascal = bbox_data('train')
+    pascal = grasp_data('train')
 
-    yolo = YOLONet()
+    yolo = GHNet()
     
 
     solver = Solver(yolo, pascal)

@@ -3,9 +3,9 @@ import datetime
 import os
 import argparse
 import configs.config_bed as cfg
-from yolo.yolo_net_fast import YOLONet
+from yolo.success_net import SNet
 from utils.timer import Timer
-from utils.pre_feature_data import bbox_data
+from utils.success_data import success_data
 from utils.pascal_voc import pascal_voc
 import IPython
 import cPickle as pickle
@@ -20,7 +20,7 @@ class Solver(object):
         self.data = data
         self.weights_file = cfg.WEIGHTS_FILE
         self.max_iter = cfg.MAX_ITER
-        self.initial_learning_rate = cfg.LEARNING_RATE
+        self.initial_learning_rate = cfg.LEARNING_RATE_C
         self.decay_steps = cfg.DECAY_STEPS
         self.decay_rate = cfg.DECAY_RATE
         self.staircase = cfg.STAIRCASE
@@ -220,9 +220,9 @@ def main():
         update_config_paths(args.data_dir, args.weights)
 
     #os.environ['CUDA_VISIBLE_DEVICES'] = cfg.GPU
-    pascal = bbox_data('train')
+    pascal = success_data('train')
 
-    yolo = YOLONet()
+    yolo = SNet()
     
 
     solver = Solver(yolo, pascal)

@@ -14,7 +14,7 @@ from yolo.yolo_conv_features import YOLO_CONV
 import cPickle as pickle
 import IPython
 
-class grasp_data(object):
+class success_data(object):
     def __init__(self, phase, rebuild=False):
 
         self.rollout_path = cfg.ROLLOUT_PATH
@@ -90,22 +90,7 @@ class grasp_data(object):
 
 
     def viz_debug(self,sess,net):
-        count = 0
-        for d_point in self.recent_batch:
-
-            c_img = d_point['c_img']
-
-            net_dist = sess.run(net.logits,feed_dict={net.images: d_point['features']})
-
-            #pred_image = plot_prediction(np.copy(c_img),net_dist)
-
-            
-            ground_image = plot_prediction(c_img,d_point['label'])
-
-
-            cv2.imwrite('debug/ground_images/img_'+str(count)+'.jpg',ground_image)
-            #cv2.imwrite('debug/pred_images/img_'+str(count)+'.jpg',pred_image)
-            count += 1
+        return
 
 
 
@@ -140,7 +125,7 @@ class grasp_data(object):
         print len(rollout)
         for data in rollout:
 
-            if(data['type'] == 'grasp'):
+            if(data['type'] == 'success'):
                 
                 data_a = augment_data(data)
                 
@@ -148,7 +133,7 @@ class grasp_data(object):
                     im_r = self.prep_image(datum_a['c_img'])
                     features = self.yc.extract_conv_features(im_r)
 
-                    label = self.compute_label(datum_a['pose'])
+                    label = self.compute_label(data['class'])
 
                     if training:
                         self.train_labels.append({'c_img': datum_a['c_img'], 'label': label, 'features':features})
@@ -160,21 +145,15 @@ class grasp_data(object):
  
 
 
-    def compute_label(self, pose):
+    def compute_label(self, clss):
         """
         Load image and bounding boxes info from XML file in the PASCAL VOC
         format.
         """
 
         label = np.zeros((2))
-
-        x = pose[0]/cfg.T_IMAGE_SIZE_W
-        y = pose[1]/cfg.T_IMAGE_SIZE_H
-
-        label = np.array([x,y])
-
-        
-
+        label[clss] = 0.9
+       
         return label
 
 
