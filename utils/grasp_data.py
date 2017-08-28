@@ -97,14 +97,14 @@ class grasp_data(object):
 
             net_dist = sess.run(net.logits,feed_dict={net.images: d_point['features']})
 
-            #pred_image = plot_prediction(np.copy(c_img),net_dist)
+            pred_image = plot_prediction(np.copy(c_img),net_dist)
 
             
-            ground_image = plot_prediction(c_img,d_point['label'])
+            #ground_image = plot_prediction(c_img,d_point['label'])
 
 
-            cv2.imwrite('debug/ground_images/img_'+str(count)+'.jpg',ground_image)
-            #cv2.imwrite('debug/pred_images/img_'+str(count)+'.jpg',pred_image)
+            #cv2.imwrite('debug/ground_images/img_'+str(count)+'.jpg',ground_image)
+            cv2.imwrite('debug/pred_images/img_'+str(count)+'.jpg',pred_image)
             count += 1
 
 
