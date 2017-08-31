@@ -15,7 +15,7 @@ import cPickle as pickle
 import IPython
 
 class success_data(object):
-    def __init__(self, phase, rebuild=False):
+    def __init__(self, phase, ss=0, rebuild=False):
 
         self.rollout_path = cfg.ROLLOUT_PATH
         self.batch_size = cfg.BATCH_SIZE
@@ -42,6 +42,8 @@ class success_data(object):
 
         self.yc = YOLO_CONV()
         self.yc.load_network()
+
+        self.ss = ss
 
         self.recent_batch = []
         self.load_rollouts()
@@ -104,6 +106,26 @@ class success_data(object):
         return image
 
 
+    def break_up_rollouts(self,rollout):
+
+        success_point = []
+        success_rollout = []
+        for data in rollout:
+
+            if(data['type'] == 'success'):
+                success_point.append(data)
+
+            elif(data['type'] == 'grasp'):
+                if( len(success_point) > 0):
+                    success_rollout.append(success_point)
+                    success_point = []
+
+        success_rollout.append(success_point)
+
+        return success_rollout
+
+
+
     def load_rollouts(self):
        
         self.train_labels = []
@@ -112,38 +134,53 @@ class success_data(object):
 
         count = 0
         
-        #for rollout_p in rollouts:
-        rollout_p = rollouts[0]  
-        rollout = pickle.load(open(rollout_p+'/rollout.p'))
+        for rollout_p in rollouts:
+            #rollout_p = rollouts[0]  
+            rollout = pickle.load(open(rollout_p+'/rollout.p'))
 
-        # if(random() > 0.2):
-        #     training = True
-        # else: 
-        #     training = False
-        training = True
-        print rollout_p
-        print len(rollout)
-        for data in rollout:
+            if(random() > 0.2):
+                training = True
+            else: 
+                training = False
+          
+            print rollout_p
+            print len(rollout)
+            success_rollout = self.break_up_rollouts(rollout)
+            for success_point in success_rollout:
+               
+                count = 0
 
-            if(data['type'] == 'success'):
-                
-                data_a = augment_data(data)
-                
-                for datum_a in data_a:
-                    im_r = self.prep_image(datum_a['c_img'])
+                if training:
+                    for data in success_point:
+                        if(count <= self.ss):
+                            print data['side']
+                            count += 1
+                            data_a = augment_data(data)
+                        
+                            data_a = augment_data(data)
+                            
+                            for datum_a in data_a:
+                                im_r = self.prep_image(datum_a['c_img'])
+                                features = self.yc.extract_conv_features(im_r)
+
+                                label = self.compute_label(data['class'])
+
+                             
+                                self.train_labels.append({'c_img': datum_a['c_img'], 'label': label, 'features':features})
+                          
+
+                else: 
+                    im_r = self.prep_image(success_point[0]['c_img'])
                     features = self.yc.extract_conv_features(im_r)
 
-                    label = self.compute_label(data['class'])
-
-                    if training:
-                        self.train_labels.append({'c_img': datum_a['c_img'], 'label': label, 'features':features})
-                    else:
-                        self.test_labels.append({'c_img': datum_a['c_img'], 'label': label, 'features':features})
+                    label = self.compute_label(success_point[0]['pose'])
+                    self.test_labels.append({'c_img': success_point[0]['c_img'], 'label': label, 'features':features})
   
         return 
 
- 
 
+
+   
 
     def compute_label(self, clss):
         """

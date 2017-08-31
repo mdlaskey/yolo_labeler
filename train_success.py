@@ -1,6 +1,7 @@
 import tensorflow as tf
 import datetime
 import os
+import sys
 import argparse
 import configs.config_bed as cfg
 from yolo.success_net import SNet
@@ -15,7 +16,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 class Solver(object):
 
-    def __init__(self, net, data):
+    def __init__(self, net, data,ss=None):
         self.net = net
         self.data = data
         self.weights_file = cfg.WEIGHTS_FILE
@@ -30,13 +31,15 @@ class Solver(object):
 
         self.save_iter = cfg.SAVE_ITER
         self.output_dir = os.path.join(
-            cfg.OUTPUT_DIR, datetime.datetime.now().strftime('%Y_%m_%d_%H_%M'))
+            cfg.TRAN_OUTPUT_DIR, datetime.datetime.now().strftime('%Y_%m_%d_%H_%M'))
 
         self.train_stats_dir = os.path.join(
-            cfg.TRAIN_STATS_DIR, datetime.datetime.now().strftime('%Y_%m_%d_%H_%M'))
+            cfg.TRAIN_STATS_DIR_T, datetime.datetime.now().strftime('%Y_%m_%d_%H_%M'))
 
         self.test_stats_dir = os.path.join(
-            cfg.TEST_STATS_DIR, datetime.datetime.now().strftime('%Y_%m_%d_%H_%M'))
+            cfg.TEST_STATS_DIR_T, datetime.datetime.now().strftime('%Y_%m_%d_%H_%M'))
+
+        self.ss = ss
 
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
@@ -135,6 +138,7 @@ class Solver(object):
                             feed_dict=feed_dict_test)
 
                         print("Test loss: " + str(test_loss))
+                        test_losses.append(test_loss)
                         
 
                         self.writer_train.add_summary(summary_str, step)
@@ -172,8 +176,8 @@ class Solver(object):
                 #     self.output_dir))
 
                 curr_time = datetime.datetime.now().strftime('%m_%d_%H_%M_%S')
-                real_out = cfg.OUTPUT_DIR
-                real_ckpt = real_out + curr_time + "save.ckpt"
+                real_out = cfg.TRAN_OUTPUT_DIR
+                real_ckpt = real_out + curr_time + "_" + cfg.CONFIG_NAME + "save.ckpt"
                 print("saving to " + str(real_out))
 
                 self.all_saver.save(self.sess, real_ckpt,
@@ -181,7 +185,8 @@ class Solver(object):
                 loss_dict = {}
                 loss_dict["test"] = test_losses
                 loss_dict["train"] = train_losses
-                pickle.dump(loss_dict, open(real_out + curr_time + "losses.p", 'wb'))
+                loss_dict["name"] = cfg.CONFIG_NAME
+                pickle.dump(loss_dict, open(cfg.TRAN_STAT_DIR+cfg.CONFIG_NAME+"_losses.p", 'wb'))
 
     def save_cfg(self):
 
@@ -211,8 +216,12 @@ def main():
     parser.add_argument('--threshold', default=0.2, type=float)
     parser.add_argument('--iou_threshold', default=0.5, type=float)
     parser.add_argument('--gpu', default='', type=str)
+    parser.add_argument('--ss', default='', type=int)
     args = parser.parse_args()
 
+
+    if args.ss is not None:
+        ss = args.ss
     if args.gpu is not None:
         cfg.GPU = args.gpu
 
@@ -220,7 +229,7 @@ def main():
         update_config_paths(args.data_dir, args.weights)
 
     #os.environ['CUDA_VISIBLE_DEVICES'] = cfg.GPU
-    pascal = success_data('train')
+    pascal = success_data('train',ss=ss)
 
     yolo = SNet()
     
