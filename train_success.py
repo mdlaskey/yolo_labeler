@@ -186,7 +186,7 @@ class Solver(object):
                 loss_dict["test"] = test_losses
                 loss_dict["train"] = train_losses
                 loss_dict["name"] = cfg.CONFIG_NAME
-                pickle.dump(loss_dict, open(cfg.TRAN_STAT_DIR+cfg.CONFIG_NAME+"_losses.p", 'wb'))
+                pickle.dump(loss_dict, open(cfg.TRAN_STATS_DIR+cfg.CONFIG_NAME+"_losses.p", 'wb'))
 
     def save_cfg(self):
 

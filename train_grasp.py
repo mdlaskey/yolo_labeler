@@ -75,7 +75,7 @@ class Solver(object):
        
         self.optimizer = tf.train.GradientDescentOptimizer(
             learning_rate=self.learning_rate).minimize(
-            self.net.total_loss, global_step=self.global_step)
+            self.net.class_loss, global_step=self.global_step)
         self.ema = tf.train.ExponentialMovingAverage(decay=0.9999)
 
         
@@ -122,7 +122,7 @@ class Solver(object):
                 if step % (self.summary_iter * 10) == 0:
                     train_timer.tic()
                     summary_str, loss, _ = self.sess.run(
-                        [self.summary_op, self.net.total_loss, self.train_op],
+                        [self.summary_op, self.net.class_loss, self.train_op],
                         feed_dict=feed_dict)
                     train_timer.toc()
                     train_losses.append(loss)
@@ -132,9 +132,10 @@ class Solver(object):
                     if(step % self.test_iter) == 0:
                         images_t, labels_t = self.data.get_test()
                         feed_dict_test = {self.net.images : images_t, self.net.labels: labels_t}
+                        #self.data.viz_debug(self.sess,self.net)
 
                         summary_str, test_loss, _ = self.sess.run(
-                            [self.summary_op, self.net.total_loss, self.train_op],
+                            [self.summary_op, self.net.class_loss, self.train_op],
                             feed_dict=feed_dict_test)
 
 

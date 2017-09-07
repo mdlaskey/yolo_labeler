@@ -25,10 +25,7 @@ class YOLO_CONV(object):
         self.boundary1 = self.cell_size * self.cell_size * self.num_class
         self.boundary2 = self.boundary1 + self.cell_size * self.cell_size * self.boxes_per_cell
 
-        self.object_scale = cfg.OBJECT_SCALE
-        self.noobject_scale = cfg.NOOBJECT_SCALE
-        self.class_scale = cfg.CLASS_SCALE
-        self.coord_scale = cfg.COORD_SCALE
+
 
         self.learning_rate = cfg.LEARNING_RATE
         self.batch_size = cfg.BATCH_SIZE

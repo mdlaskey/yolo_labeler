@@ -46,6 +46,7 @@ class grasp_data(object):
         self.ss = ss
 
         self.recent_batch = []
+        self.load_test_set()
         self.load_rollouts()
 
     def get(self, noise=False):
@@ -78,11 +79,15 @@ class grasp_data(object):
         labels = np.zeros((self.batch_size, 2))
 
         count = 0
+
+        #IPython.embed()
         while count < self.batch_size:
            
             images[count, :, :, :] = self.test_labels[self.t_cursor]['features']
             labels[count, :] = self.test_labels[self.t_cursor]['label']
             count += 1
+            # cv2.imshow('debug_test',self.test_labels[self.t_cursor]['c_img'])
+            # cv2.waitKey(300)
             self.t_cursor += 1
             if self.t_cursor >= len(self.test_labels):
                 np.random.shuffle(self.test_labels)
@@ -93,7 +98,7 @@ class grasp_data(object):
 
     def viz_debug(self,sess,net):
         count = 0
-        for d_point in self.recent_batch:
+        for d_point in self.test_labels:
 
             c_img = d_point['c_img']
 
@@ -102,12 +107,10 @@ class grasp_data(object):
             pred_image = plot_prediction(np.copy(c_img),net_dist)
 
             
-            #ground_image = plot_prediction(c_img,d_point['label'])
+            cv2.imshow('vize_debug',pred_image)
+            cv2.waitKey(300)
 
-
-            #cv2.imwrite('debug/ground_images/img_'+str(count)+'.jpg',ground_image)
-            cv2.imwrite('debug/pred_images/img_'+str(count)+'.jpg',pred_image)
-            count += 1
+            
 
 
 
@@ -125,6 +128,10 @@ class grasp_data(object):
         grasp_point = []
         grasp_rollout = []
         for data in rollout:
+            
+            
+            if type(data) == list:
+                continue
 
             if(data['type'] == 'grasp'):
                 grasp_point.append(data)
@@ -137,10 +144,42 @@ class grasp_data(object):
         return grasp_rollout
 
 
+    def load_test_set(self):
+
+        self.test_labels = []
+
+        self.train_data_path = []
+        self.test_data_path = []
+        rollouts = glob.glob(os.path.join(cfg.BC_HELD_OUT, '*_*'))
+
+        count = 0
+        
+        for rollout_p in rollouts:
+            #rollout_p = rollouts[0]  
+            rollout = pickle.load(open(rollout_p+'/rollout.p'))
+
+
+            grasp_rollout = self.break_up_rollouts(rollout)
+            for grasp_point in grasp_rollout:
+                    print "TEST EXAMPLE", rollout_p
+                    im_r = self.prep_image(grasp_point[0]['c_img'])
+                    features = self.yc.extract_conv_features(im_r)
+
+                    label = self.compute_label(grasp_point[0]['pose'])
+                    self.test_labels.append({'c_img': grasp_point[0]['c_img'], 'label': label, 'features':features})
+                    self.test_data_path.append(rollout_p)
+
+
+ 
+
+
     def load_rollouts(self):
        
         self.train_labels = []
-        self.test_labels = []
+      
+
+        self.train_data_path = []
+        self.test_data_path = []
         rollouts = glob.glob(os.path.join(self.rollout_path, '*_*'))
 
         count = 0
@@ -149,10 +188,9 @@ class grasp_data(object):
             #rollout_p = rollouts[0]  
             rollout = pickle.load(open(rollout_p+'/rollout.p'))
 
-            if(random() > 0.2):
-                training = True
-            else: 
-                training = False
+           
+
+
 
            
             print rollout_p
@@ -160,14 +198,15 @@ class grasp_data(object):
 
             grasp_rollout = self.break_up_rollouts(rollout)
             for grasp_point in grasp_rollout:
+            
+            
                 count = 0
-
                 
-                if training:
+                
+                if True:
                     for data in grasp_point:
                         
-                        if(count <= self.ss):
-                            print data['side']
+                        if(count <= self.ss ):
                             count += 1
                             data_a = augment_data(data)
                             
@@ -178,16 +217,20 @@ class grasp_data(object):
                                 label = self.compute_label(datum_a['pose'])
 
                                 self.train_labels.append({'c_img': datum_a['c_img'], 'label': label, 'features':features})
+                    self.train_data_path.append(rollout_p)
                                
 
                 else: 
+                    print "TEST EXAMPLE", rollout_p
                     im_r = self.prep_image(grasp_point[0]['c_img'])
                     features = self.yc.extract_conv_features(im_r)
 
                     label = self.compute_label(grasp_point[0]['pose'])
                     self.test_labels.append({'c_img': grasp_point[0]['c_img'], 'label': label, 'features':features})
+                    self.test_data_path.append(rollout_p)
 
 
+       
       
         return 
 
@@ -202,10 +245,11 @@ class grasp_data(object):
 
         label = np.zeros((2))
 
-        x = pose[0]/cfg.T_IMAGE_SIZE_W
-        y = pose[1]/cfg.T_IMAGE_SIZE_H
+        x = pose[0]/cfg.T_IMAGE_SIZE_W-0.5
+        y = pose[1]/cfg.T_IMAGE_SIZE_H-0.5
 
         label = np.array([x,y])
+
 
         
 

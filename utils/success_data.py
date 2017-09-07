@@ -111,6 +111,9 @@ class success_data(object):
         success_point = []
         success_rollout = []
         for data in rollout:
+            
+            if type(data) == list:
+                continue
 
             if(data['type'] == 'success'):
                 success_point.append(data)
@@ -138,7 +141,7 @@ class success_data(object):
             #rollout_p = rollouts[0]  
             rollout = pickle.load(open(rollout_p+'/rollout.p'))
 
-            if(random() > 0.2):
+            if(random() > 0.1):
                 training = True
             else: 
                 training = False
@@ -173,7 +176,7 @@ class success_data(object):
                     im_r = self.prep_image(success_point[0]['c_img'])
                     features = self.yc.extract_conv_features(im_r)
 
-                    label = self.compute_label(success_point[0]['pose'])
+                    label = self.compute_label(success_point[0]["class"])
                     self.test_labels.append({'c_img': success_point[0]['c_img'], 'label': label, 'features':features})
   
         return 

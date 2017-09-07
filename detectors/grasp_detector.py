@@ -17,7 +17,7 @@ from data_aug.draw_cross_hair import DrawPrediction
 
 class GDetector(object):
 
-    def __init__(self):
+    def __init__(self,net_name):
         
         
 
@@ -40,6 +40,8 @@ class GDetector(object):
         self.dp = DrawPrediction()
 
 
+        self.net_name = net_name
+
         #self.all_data = self.precompute_features(images)
 
         self.load_trained_net()
@@ -52,7 +54,7 @@ class GDetector(object):
         self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
         self.net = GHNet(is_training = False)
-        trained_model_file = cfg.GRASP_OUTPUT_DIR+ cfg.NET_NAME
+        trained_model_file = cfg.GRASP_OUTPUT_DIR+ self.net_name
         print 'Restoring weights from: ' + trained_model_file
         self.variable_to_restore = slim.get_variables_to_restore()
         count = 0
@@ -93,7 +95,7 @@ class GDetector(object):
    
 
 
-    def get_grasp(self,image):
+    def predict(self,image):
        
 
         features = self.yc.extract_conv_features(image)
@@ -102,8 +104,8 @@ class GDetector(object):
        
         
         
-        x = cfg.T_IMAGE_SIZE_W*result[0,0]
-        y = cfg.T_IMAGE_SIZE_H*result[0,1]
+        x = cfg.T_IMAGE_SIZE_W*(result[0,0]+0.5)
+        y = cfg.T_IMAGE_SIZE_H*(result[0,1]+0.5)
 
         pose = [x,y]
 

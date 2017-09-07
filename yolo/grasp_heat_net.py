@@ -30,6 +30,7 @@ class GHNet(object):
             self.labels = tf.placeholder(tf.float32, [None, 2])
             self.loss_layer(self.logits, self.labels)
             self.total_loss = tf.losses.get_total_loss()
+    
             tf.summary.scalar('total_loss', self.total_loss)
 
     def build_network(self,
@@ -71,12 +72,13 @@ class GHNet(object):
             # class_loss
 
             class_delta = (predict_classes - classes)
-            class_loss = tf.reduce_mean(tf.reduce_sum(tf.square(class_delta), axis=[1]), name='class_loss') 
+            
+            self.class_loss = tf.reduce_mean(tf.reduce_sum(tf.square(class_delta), axis=[1]), name='class_loss') 
 
-            tf.losses.add_loss(class_loss)
+            tf.losses.add_loss(self.class_loss)
           
 
-            tf.summary.scalar('class_loss', class_loss)
+            tf.summary.scalar('class_loss', self.class_loss)
           
 
 
