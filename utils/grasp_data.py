@@ -15,7 +15,7 @@ import cPickle as pickle
 import IPython
 
 class grasp_data(object):
-    def __init__(self, phase, ss=0, rebuild=False):
+    def __init__(self, phase, ss=0,layer = 0, rebuild=False):
 
         self.rollout_path = cfg.ROLLOUT_PATH
         self.batch_size = cfg.BATCH_SIZE
