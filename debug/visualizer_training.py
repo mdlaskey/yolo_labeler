@@ -5,7 +5,7 @@ import glob
 import cv2
 import argparse
 import configs.config_bed as cfg
-from yolo.yolo_pretrained_deploy import YOLONet
+
 from utils.timer import Timer
 import IPython
 

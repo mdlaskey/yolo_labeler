@@ -16,7 +16,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 class Solver(object):
 
-    def __init__(self, net, data,ss=None):
+    def __init__(self, net, data,ss=None,layer = 0):
         self.net = net
         self.data = data
         self.weights_file = cfg.WEIGHTS_FILE
@@ -28,6 +28,8 @@ class Solver(object):
         self.summary_iter = cfg.SUMMARY_ITER
         self.test_iter = cfg.TEST_ITER
         self.viz_debug_iter = cfg.VIZ_DEBUG_ITER
+
+        self.layer = 0
 
         self.save_iter = cfg.SAVE_ITER
         self.output_dir = os.path.join(
@@ -229,12 +231,12 @@ def main():
         update_config_paths(args.data_dir, args.weights)
 
     #os.environ['CUDA_VISIBLE_DEVICES'] = cfg.GPU
-    pascal = success_data('train',ss=ss)
+    pascal = success_data('train',ss=ss,layer = cs)
 
-    yolo = SNet()
+    yolo = SNet(layers=cs)
     
 
-    solver = Solver(yolo, pascal)
+    solver = Solver(yolo, pascal,layer = cs)
 
     print('Start training ...')
     solver.train()
