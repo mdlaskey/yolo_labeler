@@ -188,11 +188,7 @@ class grasp_data(object):
             #rollout_p = rollouts[0]  
             rollout = pickle.load(open(rollout_p+'/rollout.p'))
 
-           
-
-
-
-           
+          
             print rollout_p
             print len(rollout)
 
@@ -202,33 +198,20 @@ class grasp_data(object):
             
                 count = 0
                 
-                
-                if True:
-                    for data in grasp_point:
+                for data in grasp_point:
+                    
+                    if(count <= self.ss ):
+                        count += 1
+                        data_a = augment_data(data)
                         
-                        if(count <= self.ss ):
-                            count += 1
-                            data_a = augment_data(data)
-                            
-                            for datum_a in data_a:
-                                im_r = self.prep_image(datum_a['c_img'])
-                                features = self.yc.extract_conv_features(im_r)
+                        for datum_a in data_a:
+                            im_r = self.prep_image(datum_a['c_img'])
+                            features = self.yc.extract_conv_features(im_r)
 
-                                label = self.compute_label(datum_a['pose'])
+                            label = self.compute_label(datum_a['pose'])
 
-                                self.train_labels.append({'c_img': datum_a['c_img'], 'label': label, 'features':features})
-                    self.train_data_path.append(rollout_p)
-                               
-
-                else: 
-                    print "TEST EXAMPLE", rollout_p
-                    im_r = self.prep_image(grasp_point[0]['c_img'])
-                    features = self.yc.extract_conv_features(im_r)
-
-                    label = self.compute_label(grasp_point[0]['pose'])
-                    self.test_labels.append({'c_img': grasp_point[0]['c_img'], 'label': label, 'features':features})
-                    self.test_data_path.append(rollout_p)
-
+                            self.train_labels.append({'c_img': datum_a['c_img'], 'label': label, 'features':features})
+                self.train_data_path.append(rollout_p)
 
        
       

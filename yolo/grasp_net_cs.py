@@ -89,12 +89,12 @@ class GHNet(object):
             # class_loss
 
             class_delta = (predict_classes - classes)
-            class_loss = tf.reduce_mean(tf.reduce_sum(tf.square(class_delta), axis=[1]), name='class_loss') 
+            self.class_loss = tf.reduce_mean(tf.reduce_sum(tf.square(class_delta), axis=[1]), name='class_loss') 
 
-            tf.losses.add_loss(class_loss)
+            tf.losses.add_loss(self.class_loss)
           
 
-            tf.summary.scalar('class_loss', class_loss)
+            tf.summary.scalar('class_loss', self.class_loss)
           
 
 
