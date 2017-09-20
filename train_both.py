@@ -1,12 +1,11 @@
 import tensorflow as tf
 import datetime
 import os
-import sys
 import argparse
 import configs.config_bed as cfg
-from yolo.grasp_net_cs import GHNet
+from yolo.success_net import SNet
 from utils.timer import Timer
-from utils.grasp_data_cs import grasp_data
+from utils.success_data import success_data
 from utils.pascal_voc import pascal_voc
 import IPython
 import cPickle as pickle
@@ -16,7 +15,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 class Solver(object):
 
-    def __init__(self, net, data,ss = None,layer = 0):
+    def __init__(self, net, data):
         self.net = net
         self.data = data
         self.weights_file = cfg.WEIGHTS_FILE
@@ -28,19 +27,16 @@ class Solver(object):
         self.summary_iter = cfg.SUMMARY_ITER
         self.test_iter = cfg.TEST_ITER
         self.viz_debug_iter = cfg.VIZ_DEBUG_ITER
-        self.layer = layer
-
-        self.ss = ss
 
         self.save_iter = cfg.SAVE_ITER
         self.output_dir = os.path.join(
-            cfg.GRASP_OUTPUT_DIR, datetime.datetime.now().strftime('%Y_%m_%d_%H_%M'))
+            cfg.OUTPUT_DIR, datetime.datetime.now().strftime('%Y_%m_%d_%H_%M'))
 
         self.train_stats_dir = os.path.join(
-            cfg.TRAIN_STATS_DIR_G, datetime.datetime.now().strftime('%Y_%m_%d_%H_%M'))
+            cfg.TRAIN_STATS_DIR, datetime.datetime.now().strftime('%Y_%m_%d_%H_%M'))
 
         self.test_stats_dir = os.path.join(
-            cfg.TEST_STATS_DIR_G, datetime.datetime.now().strftime('%Y_%m_%d_%H_%M'))
+            cfg.TEST_STATS_DIR, datetime.datetime.now().strftime('%Y_%m_%d_%H_%M'))
 
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
@@ -76,7 +72,7 @@ class Solver(object):
        
         self.optimizer = tf.train.GradientDescentOptimizer(
             learning_rate=self.learning_rate).minimize(
-            self.net.class_loss, global_step=self.global_step)
+            self.net.total_loss, global_step=self.global_step)
         self.ema = tf.train.ExponentialMovingAverage(decay=0.9999)
 
         
@@ -91,7 +87,7 @@ class Solver(object):
         #IPython.embed()
 
         if self.weights_file is not None:
-            print('Restoring weights for net from: ' + self.weights_file)
+            print('Restoring weights from: ' + self.weights_file)
          
             self.saver.restore(self.sess, self.weights_file)
 
@@ -117,12 +113,13 @@ class Solver(object):
             load_timer.toc()
             feed_dict = {self.net.images: images, self.net.labels: labels}
 
-            
+            if(step % self.viz_debug_iter) == 0:
+                        self.data.viz_debug(self.sess,self.net)
             if step % self.summary_iter == 0:
                 if step % (self.summary_iter * 10) == 0:
                     train_timer.tic()
                     summary_str, loss, _ = self.sess.run(
-                        [self.summary_op, self.net.class_loss, self.train_op],
+                        [self.summary_op, self.net.total_loss, self.train_op],
                         feed_dict=feed_dict)
                     train_timer.toc()
                     train_losses.append(loss)
@@ -131,23 +128,16 @@ class Solver(object):
 
                     if(step % self.test_iter) == 0:
                         images_t, labels_t = self.data.get_test()
-                     
                         feed_dict_test = {self.net.images : images_t, self.net.labels: labels_t}
-                        
 
-                        test_loss = self.sess.run(
-                            self.net.class_loss,
+                        summary_str, test_loss, _ = self.sess.run(
+                            [self.summary_op, self.net.total_loss, self.train_op],
                             feed_dict=feed_dict_test)
 
-                        if(step % cfg.VIZ_DEBUG_ITER) == 0:
-                            self.data.viz_debug(self.sess,self.net)
-
-
-                        test_losses.append(test_loss)
                         print("Test loss: " + str(test_loss))
                         
 
-                        #self.writer_train.add_summary(summary_str, step)
+                        self.writer_train.add_summary(summary_str, step)
 
                     log_str = ('{} Epoch: {}, Step: {}, Learning rate: {},'
                         ' Loss: {:5.3f}\nSpeed: {:.3f}s/iter,'
@@ -169,8 +159,6 @@ class Solver(object):
                         feed_dict=feed_dict)
                     train_timer.toc()
 
-
-
                 self.writer_train.add_summary(summary_str, step)
 
             else:
@@ -184,11 +172,8 @@ class Solver(object):
                 #     self.output_dir))
 
                 curr_time = datetime.datetime.now().strftime('%m_%d_%H_%M_%S')
-
-
-                real_out = cfg.GRASP_OUTPUT_DIR
-                
-                real_ckpt = real_out + curr_time + "_CS_"+str(self.layer)+ "_save.ckpt"
+                real_out = cfg.OUTPUT_DIR
+                real_ckpt = real_out + curr_time + "save.ckpt"
                 print("saving to " + str(real_out))
 
                 self.all_saver.save(self.sess, real_ckpt,
@@ -196,10 +181,7 @@ class Solver(object):
                 loss_dict = {}
                 loss_dict["test"] = test_losses
                 loss_dict["train"] = train_losses
-                loss_dict["name"] = cfg.CONFIG_NAME
-
-               
-                pickle.dump(loss_dict, open(cfg.GRASP_STAT_DIR+"CS_"+str(self.layer)+"_stat.p", 'wb'))
+                pickle.dump(loss_dict, open(real_out + curr_time + "losses.p", 'wb'))
 
     def save_cfg(self):
 
@@ -211,7 +193,14 @@ class Solver(object):
                     f.write(cfg_str)
 
 
+def update_config_paths(data_dir, weights_file):
+    
+    PASCAL_PATH = os.path.join(data_dir, 'pascal_voc')
+    CACHE_PATH = os.path.join(PASCAL_PATH, 'cache')
+    OUTPUT_DIR = os.path.join(PASCAL_PATH, 'output')
+    WEIGHTS_DIR = os.path.join(PASCAL_PATH, 'weights')
 
+    WEIGHTS_FILE = os.path.join(WEIGHTS_DIR, weights_file)
     #IPython.embed()
 
 
@@ -222,24 +211,36 @@ def main():
     parser.add_argument('--threshold', default=0.2, type=float)
     parser.add_argument('--iou_threshold', default=0.5, type=float)
     parser.add_argument('--gpu', default='', type=str)
-    parser.add_argument('--cs', default='', type=int)
     args = parser.parse_args()
 
-
-    if args.cs is not None:
-        cs = args.cs
     if args.gpu is not None:
         cfg.GPU = args.gpu
 
- 
+    if args.data_dir != cfg.DATA_PATH:
+        update_config_paths(args.data_dir, args.weights)
 
     #os.environ['CUDA_VISIBLE_DEVICES'] = cfg.GPU
-    pascal = grasp_data('train',layer = cs) #number of ss images
+    pascal = success_data('train')
 
-    yolo = GHNet(layers=cs)
+    yolo = SNet()
     
 
-    solver = Solver(yolo, pascal, layer=cs)
+    solver = Solver(yolo, pascal)
+
+    print('Start training ...')
+    solver.train()
+    print('Done training.')
+    solver.sess.close()
+    del yolo
+    del pascal
+    del solver
+
+    pascal = success_data('train')
+
+    yolo = SNet()
+    IPython.embed()
+
+    solver = Solver(yolo, pascal)
 
     print('Start training ...')
     solver.train()

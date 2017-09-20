@@ -23,12 +23,7 @@ class GHNet(object):
         self.batch_size = cfg.BATCH_SIZE
         self.alpha = cfg.ALPHA
 
-        if self.layers == 0:
-            self.images = tf.placeholder(tf.float32, [None, cfg.FILTER_SIZE, cfg.FILTER_SIZE, cfg.NUM_FILTERS], name='images')
-        elif self.layers == 1:
-            self.images = tf.placeholder(tf.float32, [None, cfg.FILTER_SIZE_L1, cfg.FILTER_SIZE_L1, cfg.NUM_FILTERS], name='images')
-        elif self.layers == 2:
-            self.images = tf.placeholder(tf.float32, [None, cfg.SIZE_L2], name='images')
+        self.images = tf.placeholder(tf.float32, [None,self.image_size, self.image_size, 3])
 
         self.logits = self.build_network(self.images, num_outputs=self.output_size, alpha=self.alpha, is_training=is_training)
 
@@ -53,23 +48,42 @@ class GHNet(object):
                                 weights_initializer=tf.truncated_normal_initializer(0.0, 0.01),
                                 weights_regularizer=slim.l2_regularizer(0.0005)):
                 
-                if self.layers == 0:
-                    net = tf.pad(images, np.array([[0, 0], [1, 1], [1, 1], [0, 0]]), name='pad_27')
-                    net = slim.conv2d(net, 1024, 3, 2, padding='VALID', scope='conv_28')
-                    net = slim.conv2d(net, 1024, 3, scope='conv_29')
-                    net = slim.conv2d(net, 1024, 3, scope='conv_30')
-                    net = tf.transpose(net, [0, 3, 1, 2], name='trans_31')
-                    net = slim.flatten(net, scope='flat_32')
 
-                elif self.layers == 1:
-                    net = slim.conv2d(images, 1024, 3, scope='conv_30')
-                    net = tf.transpose(net, [0, 3, 1, 2], name='trans_31')
-                    net = slim.flatten(net, scope='flat_32')
 
-                elif self.layers == 2:
-                    net = slim.flatten(images, scope='flat_32')
+                net = tf.pad(images, np.array([[0, 0], [3, 3], [3, 3], [0, 0]]), name='pad_1')
+                net = slim.conv2d(net, 64, 7, 2, padding='VALID', scope='conv_2')
+                net = slim.max_pool2d(net, 2, padding='SAME', scope='pool_3')
+                net = slim.conv2d(net, 192, 3, scope='conv_4')
+                net = slim.max_pool2d(net, 2, padding='SAME', scope='pool_5')
+                net = slim.conv2d(net, 128, 1, scope='conv_6')
+                net = slim.conv2d(net, 256, 3, scope='conv_7')
+                net = slim.conv2d(net, 256, 1, scope='conv_8')
+                net = slim.conv2d(net, 512, 3, scope='conv_9')
+                net = slim.max_pool2d(net, 2, padding='SAME', scope='pool_10')
+                net = slim.conv2d(net, 256, 1, scope='conv_11')
+                net = slim.conv2d(net, 512, 3, scope='conv_12')
+                net = slim.conv2d(net, 256, 1, scope='conv_13')
+                net = slim.conv2d(net, 512, 3, scope='conv_14')
+                net = slim.conv2d(net, 256, 1, scope='conv_15')
+                net = slim.conv2d(net, 512, 3, scope='conv_16')
+                net = slim.conv2d(net, 256, 1, scope='conv_17')
+                net = slim.conv2d(net, 512, 3, scope='conv_18')
+                net = slim.conv2d(net, 512, 1, scope='conv_19')
+                net = slim.conv2d(net, 1024, 3, scope='conv_20')
+                net = slim.max_pool2d(net, 2, padding='SAME', scope='pool_21')
+                net = slim.conv2d(net, 512, 1, scope='conv_22')
+                net = slim.conv2d(net, 1024, 3, scope='conv_23')
+                net = slim.conv2d(net, 512, 1, scope='conv_24')
+                net = slim.conv2d(net, 1024, 3, scope='conv_25')
+                net= slim.conv2d(net, 1024, 3, scope='conv_26')
                 
-
+                net = tf.pad(net, np.array([[0, 0], [1, 1], [1, 1], [0, 0]]), name='pad_27')
+                net = slim.conv2d(net, 1024, 3, 2, padding='VALID', scope='conv_28')
+                net = slim.conv2d(net, 1024, 3, scope='conv_29')
+                net = slim.conv2d(net, 1024, 3, scope='conv_30')
+                net = tf.transpose(net, [0, 3, 1, 2], name='trans_31')
+                net = slim.flatten(net, scope='flat_32')
+                
                 net = slim.fully_connected(net, 512, scope='fc_33')
                 net = slim.fully_connected(net, 4096, scope='fc_34')
                 net = slim.dropout(net, keep_prob=keep_prob,

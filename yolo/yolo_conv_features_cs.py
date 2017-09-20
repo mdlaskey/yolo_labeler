@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-import configs.config_bed_mac as cfg
+import configs.config_bed as cfg
 import IPython
 import os
 import cv2
@@ -25,10 +25,6 @@ class YOLO_CONV(object):
         self.boundary1 = self.cell_size * self.cell_size * self.num_class
         self.boundary2 = self.boundary1 + self.cell_size * self.cell_size * self.boxes_per_cell
 
-        self.object_scale = cfg.OBJECT_SCALE
-        self.noobject_scale = cfg.NOOBJECT_SCALE
-        self.class_scale = cfg.CLASS_SCALE
-        self.coord_scale = cfg.COORD_SCALE
 
         self.layers = layer
 

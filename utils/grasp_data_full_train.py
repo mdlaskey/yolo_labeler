@@ -40,9 +40,8 @@ class grasp_data(object):
 
         self.vtraining = VTraining()
 
-        self.yc = YOLO_CONV(layer = layer)
         self.layers = layer
-        self.yc.load_network()
+    
 
         self.ss = ss
 
@@ -51,13 +50,7 @@ class grasp_data(object):
         self.load_rollouts()
 
     def get_input_empty(self):
-
-        if self.layers == 0:
-            return np.zeros((self.batch_size, cfg.FILTER_SIZE, cfg.FILTER_SIZE, cfg.NUM_FILTERS))
-        elif self.layers == 1:
-            return np.zeros((self.batch_size, cfg.FILTER_SIZE_L1, cfg.FILTER_SIZE_L1, cfg.NUM_FILTERS))
-        elif self.layers == 2:
-            return np.zeros((self.batch_size, cfg.SIZE_L2))
+        return np.zeros((self.batch_size, self.image_size, self.image_size, 3))
 
     def get(self, noise=False):
         images = self.get_input_empty()
@@ -67,9 +60,9 @@ class grasp_data(object):
         while count < self.batch_size:
 
             if self.layers < 2: 
-                images[count, :, :, :] = self.train_labels[self.cursor]['features']
+                images[count, :, :, :] = self.train_labels[self.cursor]['c_img']
             else: 
-                images[count, :] = self.train_labels[self.cursor]['features']
+                images[count, :] = self.train_labels[self.cursor]['c_img']
            
             labels[count, :] = self.train_labels[self.cursor]['label']
 
@@ -94,9 +87,9 @@ class grasp_data(object):
         while count < self.batch_size:
            
             if self.layers < 2: 
-                images[count, :, :, :] = self.test_labels[self.t_cursor]['features']
+                images[count, :, :, :] = self.test_labels[self.t_cursor]['c_img']
             else: 
-                images[count, :] = self.test_labels[self.t_cursor]['features']
+                images[count, :] = self.test_labels[self.t_cursor]['c_img']
 
             labels[count, :] = self.test_labels[self.t_cursor]['label']
             count += 1
@@ -116,7 +109,7 @@ class grasp_data(object):
             c_img = d_point['c_img']
 
             label = d_point['label']
-            net_dist = sess.run(net.logits,feed_dict={net.images: d_point['features']})
+            net_dist = sess.run(net.logits,feed_dict={net.images: d_point['c_img']})
 
             pred_image = plot_prediction(np.copy(c_img),net_dist)
 
@@ -183,12 +176,12 @@ class grasp_data(object):
             grasp_rollout = self.break_up_rollouts(rollout)
             for grasp_point in grasp_rollout:
                     print "TEST EXAMPLE", rollout_p
-                    #im_r = self.prep_image(grasp_point[0]['c_img'])
-                    im_c = grasp_point[0]['c_img']
-                    features = self.yc.extract_conv_features(im_c)
+                    im_r = self.prep_image(grasp_point[0]['c_img'])
+                    #im_c = grasp_point[0]['c_img']
+                    
 
                     label = self.compute_label(grasp_point[0]['pose'])
-                    self.test_labels.append({'c_img': grasp_point[0]['c_img'], 'label': label, 'features':features})
+                    self.test_labels.append({'c_img': im_r, 'label': label})
                     self.test_data_path.append(rollout_p)
 
 
@@ -228,13 +221,12 @@ class grasp_data(object):
                         data_a = augment_data(data)
                         
                         for datum_a in data_a:
-                            #im_r = self.prep_image(datum_a['c_img'])
-                            im_r = datum_a['c_img']
-                            features = self.yc.extract_conv_features(im_r)
+                            im_r = self.prep_image(datum_a['c_img'])
+                            
 
                             label = self.compute_label(datum_a['pose'])
 
-                            self.train_labels.append({'c_img': datum_a['c_img'], 'label': label, 'features':features})
+                            self.train_labels.append({'c_img': im_r, 'label': label})
                 self.train_data_path.append(rollout_p)
 
        

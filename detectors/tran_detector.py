@@ -5,8 +5,8 @@ import glob
 import cv2
 import argparse
 import configs.config_bed as cfg
-from yolo.grasp_net_cs import GHNet
-from yolo.yolo_conv_features_cs import YOLO_CONV
+from yolo.success_net import SNet
+from yolo.yolo_conv_features import YOLO_CONV
 from utils.timer import Timer
 import IPython
 import sys, os
@@ -15,7 +15,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]="0"
 slim = tf.contrib.slim
 from data_aug.draw_cross_hair import DrawPrediction
 
-class GDetector(object):
+class SDetector(object):
 
     def __init__(self,net_name):
         
@@ -53,8 +53,8 @@ class GDetector(object):
     def load_trained_net(self):
         self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
-        self.net = GHNet(is_training = False)
-        trained_model_file = cfg.GRASP_OUTPUT_DIR+ self.net_name
+        self.net = SNet(is_training = False)
+        trained_model_file = cfg.TRAN_OUTPUT_DIR+ self.net_name
         print 'Restoring weights from: ' + trained_model_file
         self.variable_to_restore = slim.get_variables_to_restore()
         count = 0
@@ -62,7 +62,7 @@ class GDetector(object):
             print str(count) + " "+ var.name
             count += 1
         
-        self.variables_to_restore = self.variable_to_restore[42:]
+        self.variables_to_restore = self.variable_to_restore[40:]
         self.saver_f = tf.train.Saver(self.variables_to_restore, max_to_keep=None)
 
         self.saver_f.restore(self.sess, trained_model_file)
@@ -86,6 +86,7 @@ class GDetector(object):
 
     def detect(self,inputs,image):
         img_h, img_w, _ = image.shape
+    
         net_output = self.sess.run(self.net.logits,
                                    feed_dict={self.net.images: inputs})
         #IPython.embed()
@@ -93,13 +94,6 @@ class GDetector(object):
         return net_output
 
    
-    def prep_image(self, image):
-        
-        image = cv2.resize(image, (self.image_size, self.image_size))
-        image = (image / 255.0) * 2.0 - 1.0
-
-        return image
-
 
 
     def predict(self,image):
@@ -108,20 +102,9 @@ class GDetector(object):
         features = self.yc.extract_conv_features(image)
    
         result = self.detect(features,image)
-       
-        
-        
-        x = cfg.T_IMAGE_SIZE_W*(result[0,0]+0.5)
-        y = cfg.T_IMAGE_SIZE_H*(result[0,1]+0.5)
-
-        pose = [x,y]
-
-        img = self.dp.draw_prediction(image,pose)
-        cv2.imshow('detected_result',img)
-        cv2.waitKey(30)
 
 
-        return pose
+        return result
 
     
 

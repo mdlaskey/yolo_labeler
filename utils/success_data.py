@@ -6,7 +6,7 @@ import cv2
 import cPickle
 import copy
 import glob
-from data_aug.data_augment import augment_data
+from data_aug.data_augment_s import augment_data
 from debug.visualizer_training import VTraining
 from visualizer.alpha_blend import viz_distribution,plot_prediction
 import configs.config_bed as cfg
@@ -46,6 +46,7 @@ class success_data(object):
         self.ss = ss
 
         self.recent_batch = []
+        self.load_test_set()
         self.load_rollouts()
 
     def get(self, noise=False):
@@ -128,61 +129,85 @@ class success_data(object):
         return success_rollout
 
 
+    def load_test_set(self):
 
-    def load_rollouts(self):
-       
-        self.train_labels = []
         self.test_labels = []
-        rollouts = glob.glob(os.path.join(self.rollout_path, '*_*'))
+
+        self.train_data_path = []
+        self.test_data_path = []
+        rollouts = glob.glob(os.path.join(cfg.BC_HELD_OUT, '*_*'))
 
         count = 0
+
+        if cfg.QUICK_DEBUG:
+            rollouts = [rollouts[0]]
         
         for rollout_p in rollouts:
             #rollout_p = rollouts[0]  
             rollout = pickle.load(open(rollout_p+'/rollout.p'))
 
-            if(random() > 0.1):
-                training = True
-            else: 
-                training = False
+
+            grasp_rollout = self.break_up_rollouts(rollout)
+            for grasp_point in grasp_rollout:
+                    print "TEST EXAMPLE", rollout_p
+                    #im_r = self.prep_image(grasp_point[0]['c_img'])
+                    im_c = grasp_point[0]['c_img']
+                    features = self.yc.extract_conv_features(im_c)
+
+                    label = self.compute_label(grasp_point[0]['class'])
+                    self.test_labels.append({'c_img': grasp_point[0]['c_img'], 'label': label, 'features':features})
+                    self.test_data_path.append(rollout_p)
+
+
+
+    def load_rollouts(self):
+       
+        self.train_labels = []
+      
+
+        self.train_data_path = []
+        self.test_data_path = []
+        rollouts = glob.glob(os.path.join(self.rollout_path, '*_*'))
+
+        count = 0
+
+        if cfg.QUICK_DEBUG:
+            rollouts = [rollouts[0]]
+        
+        for rollout_p in rollouts:
+            #rollout_p = rollouts[0]  
+            rollout = pickle.load(open(rollout_p+'/rollout.p'))
+
           
             print rollout_p
             print len(rollout)
-            success_rollout = self.break_up_rollouts(rollout)
-            for success_point in success_rollout:
-               
+
+            grasp_rollout = self.break_up_rollouts(rollout)
+            for grasp_point in grasp_rollout:
+            
+            
                 count = 0
+                
+                for data in grasp_point:
+                    
+                    if(count <= self.ss ):
+                        count += 1
 
-                if training:
-                    for data in success_point:
-                        if(count <= self.ss):
-                            print data['side']
-                            count += 1
-                            data_a = augment_data(data)
+                        data_a = augment_data(data)
                         
-                            data_a = augment_data(data)
+                        for datum_a in data_a:
+                            #im_r = self.prep_image(datum_a['c_img'])
+                            im_r = datum_a['c_img']
+                            features = self.yc.extract_conv_features(im_r)
                             
-                            for datum_a in data_a:
-                                im_r = self.prep_image(datum_a['c_img'])
-                                features = self.yc.extract_conv_features(im_r)
+                            label = self.compute_label(datum_a['class'])
 
-                                label = self.compute_label(data['class'])
+                            self.train_labels.append({'c_img': datum_a['c_img'], 'label': label, 'features':features})
+                self.train_data_path.append(rollout_p)
 
-                             
-                                self.train_labels.append({'c_img': datum_a['c_img'], 'label': label, 'features':features})
-                          
-
-                else: 
-                    im_r = self.prep_image(success_point[0]['c_img'])
-                    features = self.yc.extract_conv_features(im_r)
-
-                    label = self.compute_label(success_point[0]["class"])
-                    self.test_labels.append({'c_img': success_point[0]['c_img'], 'label': label, 'features':features})
-  
+       
+      
         return 
-
-
-
    
 
     def compute_label(self, clss):
@@ -192,7 +217,7 @@ class success_data(object):
         """
 
         label = np.zeros((2))
-        label[clss] = 0.9
+        label[clss] = 0.99
        
         return label
 

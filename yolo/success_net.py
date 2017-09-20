@@ -33,12 +33,9 @@ class SNet(object):
             self.total_loss = tf.losses.get_total_loss()
             tf.summary.scalar('total_loss', self.total_loss)
 
-        if self.layers == 0:
-            self.images = tf.placeholder(tf.float32, [None, cfg.FILTER_SIZE, cfg.FILTER_SIZE, cfg.NUM_FILTERS], name='images')
-        elif self.layers == 1:
-            self.images = tf.placeholder(tf.float32, [None, cfg.FILTER_SIZE_L1, cfg.FILTER_SIZE_L1, cfg.NUM_FILTERS], name='images')
-        elif self.layers == 2:
-            self.images = tf.placeholder(tf.float32, [None, cfg.SIZE_L2], name='images')
+      
+        #self.images = tf.placeholder(tf.float32, [None, cfg.FILTER_SIZE, cfg.FILTER_SIZE, cfg.NUM_FILTERS], name='images')
+     
 
     def build_network(self,
                       images,
@@ -54,22 +51,13 @@ class SNet(object):
                                 weights_initializer=tf.truncated_normal_initializer(0.0, 0.01),
                                 weights_regularizer=slim.l2_regularizer(0.0005)):
              
-               if self.layers == 0:
-                    net = tf.pad(images, np.array([[0, 0], [1, 1], [1, 1], [0, 0]]), name='pad_27')
-                    net = slim.conv2d(net, 1024, 3, 2, padding='VALID', scope='conv_28')
-                    net = slim.conv2d(net, 1024, 3, scope='conv_29')
-                    net = slim.conv2d(net, 1024, 3, scope='conv_30')
-                    net = tf.transpose(net, [0, 3, 1, 2], name='trans_31')
-                    net = slim.flatten(net, scope='flat_32')
-
-                elif self.layers == 1:
-                    net = slim.conv2d(images, 1024, 3, scope='conv_30')
-                    net = tf.transpose(net, [0, 3, 1, 2], name='trans_31')
-                    net = slim.flatten(net, scope='flat_32')
-
-                elif self.layers == 2:
-                    net = slim.flatten(images, scope='flat_32')
-                
+               
+                net = tf.pad(images, np.array([[0, 0], [1, 1], [1, 1], [0, 0]]), name='pad_27')
+                net = slim.conv2d(net, 1024, 3, 2, padding='VALID', scope='conv_28')
+                net = slim.conv2d(net, 1024, 3, scope='conv_29')
+                net = slim.conv2d(net, 1024, 3, scope='conv_30')
+                net = tf.transpose(net, [0, 3, 1, 2], name='trans_31')
+                net = slim.flatten(net, scope='flat_32')
 
                 net = slim.fully_connected(net, 512, scope='fc_33')
                 net = slim.fully_connected(net, 4096, scope='fc_34')
@@ -77,6 +65,8 @@ class SNet(object):
                                    is_training=is_training, scope='dropout_35')
                 net = slim.fully_connected(net, num_outputs,
                                            activation_fn=None, scope='fc_36')
+
+                net = tf.nn.softmax(net)
 
                 
         return net
@@ -90,12 +80,12 @@ class SNet(object):
             # class_loss
 
             class_delta = (predict_classes - classes)
-            class_loss = tf.reduce_mean(tf.reduce_sum(tf.square(class_delta), axis=[1]), name='class_loss') 
+            self.class_loss = tf.reduce_mean(tf.reduce_sum(tf.square(class_delta), axis=[1]), name='class_loss') 
 
-            tf.losses.add_loss(class_loss)
+            tf.losses.add_loss(self.class_loss)
           
 
-            tf.summary.scalar('class_loss', class_loss)
+            tf.summary.scalar('class_loss', self.class_loss)
           
 
 

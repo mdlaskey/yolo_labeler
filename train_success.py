@@ -77,7 +77,7 @@ class Solver(object):
        
         self.optimizer = tf.train.GradientDescentOptimizer(
             learning_rate=self.learning_rate).minimize(
-            self.net.total_loss, global_step=self.global_step)
+            self.net.class_loss, global_step=self.global_step)
         self.ema = tf.train.ExponentialMovingAverage(decay=0.9999)
 
         
@@ -124,7 +124,7 @@ class Solver(object):
                 if step % (self.summary_iter * 10) == 0:
                     train_timer.tic()
                     summary_str, loss, _ = self.sess.run(
-                        [self.summary_op, self.net.total_loss, self.train_op],
+                        [self.summary_op, self.net.class_loss, self.train_op],
                         feed_dict=feed_dict)
                     train_timer.toc()
                     train_losses.append(loss)
@@ -135,15 +135,15 @@ class Solver(object):
                         images_t, labels_t = self.data.get_test()
                         feed_dict_test = {self.net.images : images_t, self.net.labels: labels_t}
 
-                        summary_str, test_loss, _ = self.sess.run(
-                            [self.summary_op, self.net.total_loss, self.train_op],
+                        test_loss = self.sess.run(
+                            self.net.class_loss,
                             feed_dict=feed_dict_test)
 
                         print("Test loss: " + str(test_loss))
                         test_losses.append(test_loss)
                         
 
-                        self.writer_train.add_summary(summary_str, step)
+                        #self.writer_train.add_summary(summary_str, step)
 
                     log_str = ('{} Epoch: {}, Step: {}, Learning rate: {},'
                         ' Loss: {:5.3f}\nSpeed: {:.3f}s/iter,'
@@ -188,7 +188,7 @@ class Solver(object):
                 loss_dict["test"] = test_losses
                 loss_dict["train"] = train_losses
                 loss_dict["name"] = cfg.CONFIG_NAME
-                pickle.dump(loss_dict, open(cfg.TRAN_STATS_DIR+cfg.CONFIG_NAME+"_losses.p", 'wb'))
+                pickle.dump(loss_dict, open(cfg.TRAN_STATS_DIR+"_losses.p", 'wb'))
 
     def save_cfg(self):
 
@@ -218,12 +218,10 @@ def main():
     parser.add_argument('--threshold', default=0.2, type=float)
     parser.add_argument('--iou_threshold', default=0.5, type=float)
     parser.add_argument('--gpu', default='', type=str)
-    parser.add_argument('--ss', default='', type=int)
     args = parser.parse_args()
 
 
-    if args.ss is not None:
-        ss = args.ss
+
     if args.gpu is not None:
         cfg.GPU = args.gpu
 
@@ -231,12 +229,12 @@ def main():
         update_config_paths(args.data_dir, args.weights)
 
     #os.environ['CUDA_VISIBLE_DEVICES'] = cfg.GPU
-    pascal = success_data('train',ss=ss,layer = cs)
+    pascal = success_data('train')
 
-    yolo = SNet(layers=cs)
+    yolo = SNet()
     
 
-    solver = Solver(yolo, pascal,layer = cs)
+    solver = Solver(yolo, pascal)
 
     print('Start training ...')
     solver.train()

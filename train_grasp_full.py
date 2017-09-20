@@ -4,9 +4,9 @@ import os
 import sys
 import argparse
 import configs.config_bed as cfg
-from yolo.grasp_net_cs import GHNet
+from yolo.grasp_net_full import GHNet
 from utils.timer import Timer
-from utils.grasp_data_cs import grasp_data
+from utils.grasp_data_full_train import grasp_data
 from utils.pascal_voc import pascal_voc
 import IPython
 import cPickle as pickle
@@ -48,15 +48,15 @@ class Solver(object):
         self.save_cfg()
 
         
-        self.variable_to_restore = slim.get_variables_to_restore()
-        self.variables_to_restore = self.variable_to_restore[42:52]
+        self.variables_to_restore = slim.get_variables_to_restore()
+        #self.variables_to_restore = self.variable_to_restore[42:52]
 
         count = 0
-        for var in self.variables_to_restore:
-            print str(count) + " "+ var.name
-            count += 1
-        #tf.global_variables_initializer()
-        self.saver = tf.train.Saver(self.variables_to_restore, max_to_keep=None)
+        # for var in self.variables_to_restore:
+        #     print str(count) + " "+ var.name
+        #     count += 1
+        tf.global_variables_initializer()
+        #self.saver = tf.train.Saver(self.variables_to_restore, max_to_keep=None)
 
         self.all_saver = tf.train.Saver()
         #self.saver = tf.train.Saver()
@@ -222,24 +222,21 @@ def main():
     parser.add_argument('--threshold', default=0.2, type=float)
     parser.add_argument('--iou_threshold', default=0.5, type=float)
     parser.add_argument('--gpu', default='', type=str)
-    parser.add_argument('--cs', default='', type=int)
+ #   parser.add_argument('--cs', default='', type=int)
     args = parser.parse_args()
 
-
-    if args.cs is not None:
-        cs = args.cs
     if args.gpu is not None:
         cfg.GPU = args.gpu
 
  
 
     #os.environ['CUDA_VISIBLE_DEVICES'] = cfg.GPU
-    pascal = grasp_data('train',layer = cs) #number of ss images
+    pascal = grasp_data('train') #number of ss images
 
-    yolo = GHNet(layers=cs)
+    yolo = GHNet()
     
 
-    solver = Solver(yolo, pascal, layer=cs)
+    solver = Solver(yolo, pascal)
 
     print('Start training ...')
     solver.train()

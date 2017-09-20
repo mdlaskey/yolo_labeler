@@ -2,14 +2,14 @@ import cv2
 import cPickle as pickle
 import IPython
 import numpy as np
-import configs.config_bed as cfg
+import yolo.config_bed as cfg
 
-HALF_LENGTH = 40
+HALF_LENGTH = 15
 
-RADIUS = 20
+RADIUS = 10
 
-THICKNESS = 3
-C_THICKNESS = 3
+THICKNESS = 1
+C_THICKNESS = 1
 
 COLOR = (0,0,255) #RGB
 
@@ -33,32 +33,13 @@ class DrawPrediction:
 		return image
 
 
-	def draw_prediction(self,image,pose):
+	def draw_prediction(self,image,pose,confidence = 0):
 
-		
-		x,y = pose
-		pose = [int(x),int(y)]
-		pose = tuple(pose)
+
 		image = self.make_cross_hair(image,pose)
 
 		return image
 
-
-
-	def draw_tran_prediction(self,image,prediction):
-
-	#	prob_success = prediction[,0]
-
-		prob_success = int(prediction[0,0]*100)
-
-		text_string = "P.S. "+str(prob_success)+'%'
-
-	
-
-		cv2.putText(image, text_string, (80,450), cv2.FONT_HERSHEY_SIMPLEX,4.0,(0,255,0),thickness=8)
-
-
-		return image
 
 
 if __name__ == "__main__":

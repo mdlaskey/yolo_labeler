@@ -73,8 +73,8 @@ def plot_prediction(outImage,pose):
 
     print pose
   
-    x = cfg.T_IMAGE_SIZE_W*pose[0,0]
-    y = cfg.T_IMAGE_SIZE_H*pose[0,1]
+    x = cfg.T_IMAGE_SIZE_W*(pose[0,0]+0.5)
+    y = cfg.T_IMAGE_SIZE_H*(pose[0,1]+0.5)
 
     pose = [x,y]
     img = DP.draw_prediction(outImage,pose)

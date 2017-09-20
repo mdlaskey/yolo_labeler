@@ -117,7 +117,7 @@ class Solver(object):
             feed_dict = {self.net.images: images, self.net.labels: labels}
 
             if(step % self.viz_debug_iter) == 0:
-                        self.data.viz_debug(self.sess,self.net)
+                self.data.viz_debug(self.sess,self.net)
             if step % self.summary_iter == 0:
                 if step % (self.summary_iter * 10) == 0:
                     train_timer.tic()
